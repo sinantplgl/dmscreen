@@ -7,18 +7,17 @@
 # localStorage; use the in-app Export / Import to move it between machines.
 #
 # ── "D&D Beyond (exact / rendered)" inside Docker ─────────────────────────────
-# The image has NO browser. To use the rendered scrape from the container, run a
-# headless browser on your HOST and point BROWSER_CDP_URL at it. On the host:
+# The app image has NO browser baked in (keeps it tiny). The rendered scrape is
+# served instead by a self-hosted `browserless` container on the compose network;
+# dm-screen connects to it over CDP via BROWSER_CDP_URL. browserless launches
+# Chrome on-demand per scrape and reaps it, so nothing heavy runs while idle.
 #
-#   npx playwright install chromium-headless-shell        # once
-#   chromium-headless-shell --headless --remote-debugging-port=9222 \
-#       --remote-debugging-address=0.0.0.0                # leave running
+# No browserless.io account is needed — TOKEN is a secret you choose; it just has
+# to match the ?token= in BROWSER_CDP_URL below. The browserless port is NOT
+# published, so its CDP endpoint is reachable only by dm-screen, not your LAN.
 #
-# then start compose with:  BROWSER_CDP_URL=http://host.docker.internal:9222 docker compose up -d --build
-# (Heads-up: an open remote-debugging port is sensitive — only expose it on a
-# trusted local network.) If BROWSER_CDP_URL is unset, the rendered view simply
-# reports that no browser is available; the "D&D Beyond (native)" JSON provider
-# still works fully without any browser.
+# Start everything with:  docker compose up -d --build
+# The "D&D Beyond (native)" JSON provider works without any browser regardless.
 services:
   dm-screen:
     build: .
@@ -26,7 +25,19 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - BROWSER_CDP_URL=${BROWSER_CDP_URL:-}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      # talk to the browserless service over the compose network
+      - BROWSER_CDP_URL=ws://browserless:3000?token=local-dev-token
+    depends_on:
+      - browserless
     restart: unless-stopped
+
+  browserless:
+    image: ghcr.io/browserless/chromium:latest
+    container_name: dm-screen-browser
+    environment:
+      - TOKEN=local-dev-token   # required by browserless v2; must match ?token= above
+      - CONCURRENT=1            # one scrape at a time is plenty for character imports
+      - TIMEOUT=60000           # kill a stuck session after 60s
+    mem_limit: 1g               # hard cap so a runaway Chrome can't eat the box
+    restart: unless-stopped
+    # no host port published — only dm-screen reaches it, over the internal network

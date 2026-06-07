@@ -12,6 +12,7 @@ import type {
   PanelType,
   Party,
   Player,
+  RefItem,
   SessionNode,
   Tab,
 } from '../types'
@@ -179,7 +180,11 @@ interface Actions {
   updateCreature: (id: string, patch: Partial<Creature>) => void
   removeCreature: (id: string) => void
 
-  // (reference items are managed per-panel in PanelInstance.config — see ReferenceTables)
+  // reference library (shared pool — panels pick which items to display)
+  addRefItem: (kind: 'table' | 'note' | 'image') => string
+  updateRefItem: (id: string, patch: Partial<RefItem>) => void
+  removeRefItem: (id: string) => void
+  copyRefItem: (id: string) => string
 
   // session tracker (nested tree)
   addNode: (parentId: string | undefined, type: string) => string
@@ -195,7 +200,6 @@ interface Actions {
   clearDice: () => void
 
   // meta
-  setCharacterProvider: (id: string) => void
   setDdbCobalt: (cobalt: string) => void
   exportData: () => string
   importData: (data: AppData) => void
@@ -582,6 +586,44 @@ export const useStore = create<Store>()(
 
       removeCreature: (id) => set((s) => ({ bestiary: s.bestiary.filter((c) => c.id !== id) })),
 
+      // ── reference library ───────────────────────────────────────────────────
+      // A single shared pool of reference items. Reference panels each pick which
+      // of these to show (and where) — see ReferenceTables. Editing/deleting here
+      // affects every panel that displays the item, in every campaign.
+      addRefItem: (kind) => {
+        const id = uid('ref')
+        const item: RefItem =
+          kind === 'table'
+            ? { id, kind: 'table', title: 'New Table', columns: ['Column A', 'Column B'], rows: [['', '']] }
+            : kind === 'note'
+              ? { id, kind: 'note', title: 'New Note', body: '' }
+              : { id, kind: 'image', title: 'New Image', url: '', caption: '' }
+        set((s) => ({ tables: [...s.tables, item] }))
+        return id
+      },
+
+      updateRefItem: (id, patch) =>
+        set((s) => ({
+          tables: s.tables.map((it) => (it.id === id ? (Object.assign({}, it, patch) as RefItem) : it)),
+        })),
+
+      removeRefItem: (id) => set((s) => ({ tables: s.tables.filter((it) => it.id !== id) })),
+
+      copyRefItem: (id) => {
+        const newId = uid('ref')
+        set((s) => {
+          const src = s.tables.find((it) => it.id === id)
+          if (!src) return s
+          const title = `${src.title} (copy)`
+          const copy: RefItem =
+            'rows' in src
+              ? { ...src, id: newId, title, builtin: false, rows: src.rows.map((r) => [...r]), columns: [...src.columns] }
+              : { ...src, id: newId, title, builtin: false }
+          return { tables: [...s.tables, copy] }
+        })
+        return newId
+      },
+
       // ── session tracker (nested tree) ──────────────────────────────────────
       addNode: (parentId, type) => {
         const id = uid('sn')
@@ -664,7 +706,6 @@ export const useStore = create<Store>()(
       clearDice: () => set({ diceHistory: [] }),
 
       // ── meta ─────────────────────────────────────────────────────────────
-      setCharacterProvider: (id) => set({ characterProvider: id }),
       setDdbCobalt: (cobalt) => set({ ddbCobalt: cobalt }),
 
       exportData: () => {
@@ -685,7 +726,6 @@ export const useStore = create<Store>()(
           diceHistory: s.diceHistory,
           bestiary: s.bestiary,
           tables: s.tables,
-          characterProvider: s.characterProvider,
           ddbCobalt: '', // never export the credential
         }
         return JSON.stringify(data, null, 2)
@@ -733,7 +773,6 @@ export const useStore = create<Store>()(
         diceHistory: s.diceHistory,
         bestiary: s.bestiary,
         tables: s.tables,
-        characterProvider: s.characterProvider,
         ddbCobalt: s.ddbCobalt,
       }),
       migrate: (persisted: unknown, version: number) => {

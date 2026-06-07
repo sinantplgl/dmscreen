@@ -279,8 +279,6 @@ export interface AppData extends CampaignState {
   // ── shared across all campaigns ──
   bestiary: Creature[]
   tables: RefItem[]
-  /** Which character-detail provider is active (pluggable). */
-  characterProvider: string
   /**
    * D&D Beyond CobaltSession cookie, used by the proxy to fetch campaign-only
    * characters. Persisted locally for convenience but deliberately EXCLUDED from

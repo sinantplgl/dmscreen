@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import './ReferenceTables.css'
 import { Board } from '../../components/Board'
+import type { Box } from '../../components/Board/Board'
 import { Checkbox } from '../../components/Checkbox'
+import { PencilIcon, CopyIcon, CheckIcon } from '../../components/icons'
 import { useStore } from '../../store/store'
-import { uid } from '../../lib/dnd'
 import { Markdown } from '../../lib/markdown'
 import type { RefImage, RefItem, RefNote, RefTable } from '../../types'
 
@@ -12,25 +13,25 @@ type Update = (id: string, patch: Record<string, unknown>) => void
 type CardProps<T> = {
   item: T
   update: Update
-  remove: (id: string) => void
   copy: (id: string) => void
+  hide: (id: string) => void
 }
 
-// ── shared card header: drag grip (handle) + title + edit/copy/delete ─────────
+// ── shared card header: drag grip (handle) + title + edit/copy/remove ─────────
 function CardHeader({
   item,
   editing,
   setEditing,
   update,
-  remove,
   copy,
+  hide,
 }: {
   item: RefItem
   editing: boolean
   setEditing: (fn: (v: boolean) => boolean) => void
   update: Update
-  remove: (id: string) => void
   copy: (id: string) => void
+  hide: (id: string) => void
 }) {
   return (
     <div className="table-title ref-head">
@@ -47,17 +48,27 @@ function CardHeader({
         <span className="ref-title-text">{item.title}</span>
       )}
       <span className="spacer" />
-      <div className="row-tools">
-        <button onClick={() => setEditing((v) => !v)}>{editing ? 'Done' : 'Edit'}</button>
-        <button onClick={() => copy(item.id)} title="Duplicate">
-          Copy
+      <div className="row-tools ref-head-tools">
+        <button
+          className="ref-tool-btn"
+          onClick={() => setEditing((v) => !v)}
+          title={editing ? 'Done editing' : 'Edit content (shared everywhere)'}
+        >
+          {editing ? <CheckIcon /> : <PencilIcon />}
         </button>
         <button
-          onClick={() => {
-            if (confirm(`Delete "${item.title}"?`)) remove(item.id)
-          }}
+          className="ref-tool-btn"
+          onClick={() => copy(item.id)}
+          title="Duplicate into the library"
         >
-          Del
+          <CopyIcon />
+        </button>
+        <button
+          className="ref-tool-btn"
+          onClick={() => hide(item.id)}
+          title="Remove from this panel (kept in the library)"
+        >
+          ✕
         </button>
       </div>
     </div>
@@ -65,7 +76,7 @@ function CardHeader({
 }
 
 // ── TABLE ────────────────────────────────────────────────────────────────────
-function TableCard({ item, update, remove, copy }: CardProps<RefTable>) {
+function TableCard({ item, update, copy, hide }: CardProps<RefTable>) {
   const [editing, setEditing] = useState(false)
 
   const setCell = (r: number, c: number, val: string) => {
@@ -95,7 +106,7 @@ function TableCard({ item, update, remove, copy }: CardProps<RefTable>) {
 
   return (
     <div className="book-table">
-      <CardHeader item={item} editing={editing} setEditing={setEditing} update={update} remove={remove} copy={copy} />
+      <CardHeader item={item} editing={editing} setEditing={setEditing} update={update} copy={copy} hide={hide} />
       <table>
         <thead>
           <tr>
@@ -146,11 +157,11 @@ function TableCard({ item, update, remove, copy }: CardProps<RefTable>) {
 }
 
 // ── NOTE ───────────────────────────────────────────────────────────────────
-function NoteCard({ item, update, remove, copy }: CardProps<RefNote>) {
+function NoteCard({ item, update, copy, hide }: CardProps<RefNote>) {
   const [editing, setEditing] = useState(false)
   return (
     <div className="book-table">
-      <CardHeader item={item} editing={editing} setEditing={setEditing} update={update} remove={remove} copy={copy} />
+      <CardHeader item={item} editing={editing} setEditing={setEditing} update={update} copy={copy} hide={hide} />
       {editing ? (
         <textarea
           className="ref-note-edit"
@@ -168,11 +179,11 @@ function NoteCard({ item, update, remove, copy }: CardProps<RefNote>) {
 }
 
 // ── IMAGE ──────────────────────────────────────────────────────────────────
-function ImageCard({ item, update, remove, copy }: CardProps<RefImage>) {
+function ImageCard({ item, update, copy, hide }: CardProps<RefImage>) {
   const [editing, setEditing] = useState(false)
   return (
     <div className="book-table">
-      <CardHeader item={item} editing={editing} setEditing={setEditing} update={update} remove={remove} copy={copy} />
+      <CardHeader item={item} editing={editing} setEditing={setEditing} update={update} copy={copy} hide={hide} />
       {editing ? (
         <div className="ref-image-edit">
           <input
@@ -214,107 +225,98 @@ export function ReferenceTables({
   config?: Record<string, unknown>
   onConfig: (c: Record<string, unknown>) => void
 }) {
-  // The app's built-in reference tables — the library a panel can pull from.
-  // A fresh panel starts EMPTY; the user opts into the bits they want.
+  // The shared reference library (every reference item that exists, across all
+  // campaigns). This panel just picks WHICH of them to show, and where.
   const library = useStore((s) => s.tables)
-  const stored = config?.refItems as RefItem[] | undefined
+  const addRefItem = useStore((s) => s.addRefItem)
+  const updateRefItem = useStore((s) => s.updateRefItem)
+  const removeRefItem = useStore((s) => s.removeRefItem)
+  const copyRefItem = useStore((s) => s.copyRefItem)
+
+  // Per-panel: which library items are shown here, their board layout, grid cols.
+  const shownIds = (config?.refShownIds as string[]) ?? []
+  const layouts = (config?.refLayouts as Record<string, Box>) ?? {}
   const cols = (config?.refCols as number) ?? DEFAULT_COLS
-  const [libOpen, setLibOpen] = useState(false)
+  const [pickOpen, setPickOpen] = useState(false)
 
-  const items = stored ?? []
-  const setItems = (next: RefItem[]) => onConfig({ refItems: next })
-  const update: Update = (id, patch) =>
-    setItems(items.map((it) => (it.id === id ? (Object.assign({}, it, patch) as RefItem) : it)))
-  const removeItem = (id: string) => setItems(items.filter((it) => it.id !== id))
-  const copyItem = (id: string) => {
-    const src = items.find((it) => it.id === id)
-    if (!src) return
-    const base = src.layout ?? { x: 0, y: 0, w: 6, h: 8 }
-    const layout = { x: base.x, y: base.y + base.h, w: base.w, h: base.h }
-    const title = `${src.title} (copy)`
-    let copy: RefItem
-    if ('rows' in src) {
-      copy = {
-        ...src,
-        id: uid('ref'),
-        title,
-        layout,
-        rows: src.rows.map((r) => [...r]),
-        columns: [...src.columns],
-      }
-    } else {
-      copy = { ...src, id: uid('ref'), title, layout }
-    }
-    setItems([...items, copy])
+  // Resolve ids → live library items, dropping any that were deleted elsewhere.
+  const byId = new Map(library.map((it) => [it.id, it]))
+  const shown = shownIds.map((id) => byId.get(id)).filter((it): it is RefItem => !!it)
+
+  const bottomY = shown.reduce((m, it) => {
+    const b = layouts[it.id]
+    return b ? Math.max(m, b.y + b.h) : m
+  }, 0)
+
+  const showOnPanel = (id: string) => {
+    if (shownIds.includes(id)) return
+    const box: Box = { x: 0, y: bottomY, w: Math.min(6, cols), h: 8 }
+    onConfig({ refShownIds: [...shownIds, id], refLayouts: { ...layouts, [id]: box } })
   }
+  const hideFromPanel = (id: string) => onConfig({ refShownIds: shownIds.filter((x) => x !== id) })
+  const setLayout = (id: string, box: Box) => onConfig({ refLayouts: { ...layouts, [id]: box } })
 
-  const bottomY = items.reduce((m, it) => Math.max(m, (it.layout?.y ?? 0) + (it.layout?.h ?? 0)), 0)
-  const addItem = (kind: 'table' | 'note' | 'image') => {
-    const id = uid('ref')
-    const layout = { x: 0, y: bottomY, w: Math.min(6, cols), h: 6 }
-    const it: RefItem =
-      kind === 'table'
-        ? { id, kind: 'table', title: 'New Table', columns: ['Column A', 'Column B'], rows: [['', '']], layout }
-        : kind === 'note'
-          ? { id, kind: 'note', title: 'New Note', body: '', layout }
-          : { id, kind: 'image', title: 'New Image', url: '', caption: '', layout }
-    setItems([...items, it])
-  }
-
-  // A built-in item keeps its stable id when placed, so its checkbox reflects
-  // whether it's currently on the board. Toggling adds or removes that card.
-  const onBoardIds = new Set(items.map((it) => it.id))
-  const toggleBuiltin = (src: RefItem) => {
-    if (onBoardIds.has(src.id)) {
-      setItems(items.filter((it) => it.id !== src.id))
+  // Create a brand-new library item and immediately show it on this panel.
+  const createItem = (kind: 'table' | 'note' | 'image') => showOnPanel(addRefItem(kind))
+  // Duplicate an item into the library and show the copy here.
+  const copyItem = (id: string) => showOnPanel(copyRefItem(id))
+  // Delete an item from the library entirely (affects every panel & campaign).
+  const deleteFromLibrary = (item: RefItem) => {
+    if (!confirm(`Delete "${item.title}" from the reference library? It will disappear from every panel.`))
       return
-    }
-    const layout = { x: 0, y: bottomY, w: Math.min(6, cols), h: 8 }
-    const placed: RefItem =
-      'rows' in src
-        ? { ...src, builtin: false, layout, rows: src.rows.map((r) => [...r]), columns: [...src.columns] }
-        : { ...src, builtin: false, layout }
-    setItems([...items, placed])
+    removeRefItem(item.id)
+    if (shownIds.includes(item.id)) hideFromPanel(item.id)
   }
 
   return (
     <div>
       <div className="flex-row" style={{ gap: 6, marginBottom: 6 }}>
-        {library.length > 0 && (
-          <div className="ref-lib-wrap">
-            <button
-              className={'btn btn-sm' + (libOpen ? ' btn-accent' : '')}
-              onClick={() => setLibOpen((v) => !v)}
-              title="Pick which built-in reference tables to show"
-            >
-              Built-in ▾
-            </button>
-            {libOpen && (
-              <>
-                <div className="ref-lib-overlay" onClick={() => setLibOpen(false)} />
-                <div className="ref-lib-menu">
-                  <div className="ref-lib-head">Built-in references</div>
-                  {library.map((tbl) => (
-                    <div key={tbl.id} className="ref-lib-item">
+        <div className="ref-lib-wrap">
+          <button
+            className={'btn btn-sm' + (pickOpen ? ' btn-accent' : '')}
+            onClick={() => setPickOpen((v) => !v)}
+            title="Choose which reference items to show on this panel"
+          >
+            References ▾
+          </button>
+          {pickOpen && (
+            <>
+              <div className="ref-lib-overlay" onClick={() => setPickOpen(false)} />
+              <div className="ref-lib-menu">
+                <div className="ref-lib-head">Show on this panel</div>
+                {library.length === 0 ? (
+                  <div className="ref-lib-empty">
+                    No references yet — create one with the + buttons.
+                  </div>
+                ) : (
+                  library.map((it) => (
+                    <div key={it.id} className="ref-lib-item">
                       <Checkbox
-                        checked={onBoardIds.has(tbl.id)}
-                        onChange={() => toggleBuiltin(tbl)}
-                        label={tbl.title}
+                        checked={shownIds.includes(it.id)}
+                        onChange={() => (shownIds.includes(it.id) ? hideFromPanel(it.id) : showOnPanel(it.id))}
+                        label={it.title}
                       />
+                      <button
+                        className="icon-btn danger ref-lib-del"
+                        title="Delete from library (removes it everywhere)"
+                        onClick={() => deleteFromLibrary(it)}
+                      >
+                        ✕
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-        <button className="btn btn-sm" onClick={() => addItem('table')}>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+        <button className="btn btn-sm" onClick={() => createItem('table')}>
           + Table
         </button>
-        <button className="btn btn-sm" onClick={() => addItem('note')}>
+        <button className="btn btn-sm" onClick={() => createItem('note')}>
           + Note
         </button>
-        <button className="btn btn-sm" onClick={() => addItem('image')}>
+        <button className="btn btn-sm" onClick={() => createItem('image')}>
           + Image
         </button>
         <span className="spacer" />
@@ -332,21 +334,21 @@ export function ReferenceTables({
         </label>
       </div>
 
-      {items.length === 0 ? (
+      {shown.length === 0 ? (
         <div className="empty-hint">
-          Empty board — pick from <strong>Built-in</strong> references, or add your own table, note,
-          or image.
+          Nothing shown here yet — open <strong>References</strong> to pick from your library, or add a
+          new table, note, or image with the + buttons.
         </div>
       ) : (
         <Board
-          items={items}
+          items={shown}
           cols={cols}
-          layoutOf={(it) => it.layout}
-          onLayout={(id, b) => update(id, { layout: b })}
+          layoutOf={(it) => layouts[it.id]}
+          onLayout={setLayout}
           defaultBox={{ x: 0, y: 0, w: Math.min(6, cols), h: 6 }}
           itemClassName="parchment"
           renderItem={(it) => (
-            <RefItemView item={it} update={update} remove={removeItem} copy={copyItem} />
+            <RefItemView item={it} update={updateRefItem} copy={copyItem} hide={hideFromPanel} />
           )}
         />
       )}

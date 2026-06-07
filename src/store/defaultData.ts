@@ -147,7 +147,6 @@ const REFERENCE_TABLES: RefTable[] = [
   {
     id: 'tbl_conditions',
     title: 'Conditions',
-    builtin: true,
     columns: ['Condition', 'Effect'],
     rows: [
       ['Blinded', 'Auto-fail checks requiring sight; attacks vs. it have advantage; its attacks have disadvantage.'],
@@ -165,7 +164,6 @@ const REFERENCE_TABLES: RefTable[] = [
   {
     id: 'tbl_dcs',
     title: 'Difficulty Classes',
-    builtin: true,
     columns: ['Task Difficulty', 'DC'],
     rows: [
       ['Very Easy', '5'],
@@ -179,7 +177,6 @@ const REFERENCE_TABLES: RefTable[] = [
   {
     id: 'tbl_cover',
     title: 'Cover & Vision',
-    builtin: true,
     columns: ['Type', 'Effect'],
     rows: [
       ['Half cover', '+2 to AC and Dexterity saving throws.'],
@@ -192,7 +189,6 @@ const REFERENCE_TABLES: RefTable[] = [
   {
     id: 'tbl_actions',
     title: 'Actions in Combat',
-    builtin: true,
     columns: ['Action', 'Summary'],
     rows: [
       ['Attack', 'Make one melee or ranged attack (more with Extra Attack).'],
@@ -207,7 +203,6 @@ const REFERENCE_TABLES: RefTable[] = [
   {
     id: 'tbl_xp_thresholds',
     title: 'Encounter Difficulty (per character)',
-    builtin: true,
     columns: ['Char. Level', 'Easy', 'Medium', 'Hard', 'Deadly'],
     rows: [
       ['5', '250', '500', '750', '1,100'],
@@ -221,7 +216,6 @@ const REFERENCE_TABLES: RefTable[] = [
   {
     id: 'tbl_concentration',
     title: 'Concentration',
-    builtin: true,
     columns: ['Trigger', 'Result'],
     rows: [
       ['Take damage', 'Con save, DC 10 or half the damage taken (whichever is higher).'],
@@ -331,7 +325,6 @@ export function makeDefaultData(): AppData {
       },
     ],
     diceHistory: [],
-    characterProvider: 'rendered',
     ddbCobalt: '',
   }
 }

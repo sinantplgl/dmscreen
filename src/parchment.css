@@ -300,19 +300,38 @@
   background: rgba(146, 38, 16, 0.25);
 }
 
-/* ── Reference card header: grip + title + span control + tools ── */
+/* ── Reference card header: grip + title + tools, all on one line ── */
 .book-table .ref-head {
   justify-content: flex-start;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
-.book-table .ref-head .spacer {
-  flex: 1;
-}
-.book-table .ref-title-text {
+/* The title takes the slack and ellipsizes so the compact icon tools always
+   fit beside it without spilling past the card edge. */
+.book-table .ref-head .ref-title-text {
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.book-table .ref-head .spacer {
+  display: none;
+}
+.book-table .ref-head-tools {
+  flex: 0 0 auto;
+  margin-left: auto;
+  gap: 2px;
+}
+/* Square, icon-sized tool buttons (override the wider text-button padding). */
+.book-table .ref-head-tools .ref-tool-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 20px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
 }
 .book-table .drag-grip {
   cursor: grab;

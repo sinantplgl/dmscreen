@@ -44,7 +44,7 @@
 
 /* breadcrumb sibling dropdown */
 .crumb-wrap { position: relative; display: inline-flex; }
-.crumb-caret { font-size: 9px; opacity: 0.7; margin-left: 2px; }
+.crumb-caret { font-size: 13px; opacity: 0.7; margin-left: 2px; }
 .crumb-overlay { position: fixed; inset: 0; z-index: 40; }
 .crumb-menu {
   position: absolute;

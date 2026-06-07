@@ -336,7 +336,8 @@ function Breadcrumb({
         const siblings = childrenOf(nodes, n.parentId)
         const hasMenu = siblings.length > 1
         const open = menuFor === n.id
-        return (
+        return (<>
+          <span className="crumb-caret">▸</span>
           <span className="crumb-wrap" key={n.id}>
             <button
               className="crumb"
@@ -366,6 +367,7 @@ function Breadcrumb({
               </>
             )}
           </span>
+        </>
         )
       })}
     </div>

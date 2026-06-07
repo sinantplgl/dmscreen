@@ -322,14 +322,14 @@ function AddCreatureModal({
 }
 
 export function Bestiary() {
-  const bestiary = useStore((s) => s.bestiary)
+  const bestiary = useStore((s) => s.bestiary).sort()
   const sendToCombat = useStore((s) => s.sendCreatureToCombat)
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
 
-  const filtered = bestiary.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = bestiary.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())).sort()
   const editing = bestiary.find((c) => c.id === editId)
 
   return (

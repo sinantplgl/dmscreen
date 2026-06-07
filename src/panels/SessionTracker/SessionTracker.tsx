@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import type { ComponentType, ReactNode } from 'react'
+import type { ComponentType, DragEvent, ReactNode } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
 import { Board } from '../../components/Board'
+import { NodeItems } from './NodeItems'
 import type { SessionNode } from '../../types'
 import './SessionTracker.css'
 import {
@@ -56,14 +57,66 @@ function iconFor(n: SessionNode): ReactNode {
 
 /** Leaf content types: always leaves (no children / Open / add-child); render
  *  dedicated content (markdown body / stat block / image). */
-const isLeafType = (type: string) => type === 'note' || type === 'statblock' || type === 'image'
+const isLeafType = (type: string) => type === 'note' || type === 'statblock' || type === 'image' || type === 'item'
 
-/** Effective board visibility: explicit `hidden` wins; otherwise containers are
- *  hidden by default and leaf content nodes are shown. */
-const isHidden = (n: SessionNode) => n.hidden ?? !isLeafType(n.type)
+/** Board visibility default (decoupled from leaf-ness): leaf content types plus
+ *  `item` show by default; other containers are hidden until revealed. */
+const showsByDefault = (type: string) => isLeafType(type)
+
+/** Effective board visibility: explicit `hidden` wins; otherwise per the default. */
+const isHidden = (n: SessionNode) => n.hidden ?? !showsByDefault(n.type)
 
 const childrenOf = (nodes: SessionNode[], parentId: string | undefined) =>
   nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.order - b.order)
+
+// Placeholder shown when a node has no title (names start empty now).
+const placeholderFor = (n: SessionNode) => `New ${n.type}`
+/** Title for read-only spots: the name, or a faded placeholder when empty. */
+function displayTitle(n: SessionNode): ReactNode {
+  return n.title.trim() ? n.title : <span className="muted">{placeholderFor(n)}</span>
+}
+
+/**
+ * Displayed number for each node in a sibling group. Auto-increments, but a node
+ * with an explicit `number` pins that value and the following siblings continue
+ * from it (e.g. overrides at position 3 = 5 → 1,2,5,6,7…).
+ */
+function siblingNumbers(siblings: SessionNode[]): Map<string, number> {
+  const out = new Map<string, number>()
+  let n = 0
+  for (const s of siblings) {
+    n = typeof s.number === 'number' && !Number.isNaN(s.number) ? s.number : n + 1
+    out.set(s.id, n)
+  }
+  return out
+}
+
+// ── tree drag-and-drop ───────────────────────────────────────────────────────
+const NODE_MIME = 'application/x-session-node'
+type DropZone = 'before' | 'after' | 'inside'
+// The node currently being dragged (single drag at a time) — lets a row skip
+// showing drop indicators on itself.
+let draggingNodeId: string | null = null
+
+/** Editable sibling-number prefix. Typing pins an override; clearing reverts. */
+function NumberPrefix({ node, num }: { node: SessionNode; num: number }) {
+  const updateNode = useStore((s) => s.updateNode)
+  const overridden = typeof node.number === 'number'
+  return (
+    <input
+      className={'node-number' + (overridden ? ' overridden' : '')}
+      value={num}
+      inputMode="numeric"
+      title={overridden ? 'Pinned number — clear to auto-number' : 'Auto-numbered — type to pin'}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => {
+        const v = e.target.value.trim()
+        const parsed = parseInt(v, 10)
+        updateNode(node.id, { number: v === '' || Number.isNaN(parsed) ? undefined : parsed })
+      }}
+    />
+  )
+}
 
 // ── creature link picker ─────────────────────────────────────────────────────
 function CreaturePicker({ nodeId, onClose }: { nodeId: string; onClose: () => void }) {
@@ -121,43 +174,95 @@ function CreaturePicker({ nodeId, onClose }: { nodeId: string; onClose: () => vo
 // ── one node row (recurses into its children) ────────────────────────────────
 function NodeRow({
   node,
+  num,
   nodes,
   depth,
   setFocus,
-  onPick,
   collapsed,
   toggleCollapsed,
   expand,
 }: {
   node: SessionNode
+  num: number
   nodes: SessionNode[]
   depth: number
   setFocus: (id: string | undefined) => void
-  onPick: (id: string) => void
   collapsed: Record<string, boolean>
   toggleCollapsed: (id: string) => void
   expand: (id: string) => void
 }) {
-  const bestiary = useStore((s) => s.bestiary)
   const updateNode = useStore((s) => s.updateNode)
   const removeNode = useStore((s) => s.removeNode)
   const moveNodeUp = useStore((s) => s.moveNodeUp)
   const moveNodeDown = useStore((s) => s.moveNodeDown)
   const indentNode = useStore((s) => s.indentNode)
   const outdentNode = useStore((s) => s.outdentNode)
+  const moveNode = useStore((s) => s.moveNode)
   const addNode = useStore((s) => s.addNode)
 
   const kids = childrenOf(nodes, node.id)
+  const kidNums = siblingNumbers(kids)
   const isCollapsed = !!collapsed[node.id]
-  const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState(false)
   const [typeOpen, setTypeOpen] = useState(false)
-  const creature = node.creatureId ? bestiary.find((b) => b.id === node.creatureId) : undefined
+  const [dragging, setDragging] = useState(false)
+  const [dropZone, setDropZone] = useState<DropZone | null>(null)
   const indent = depth * 16
+
+  const onDragStart = (e: DragEvent) => {
+    draggingNodeId = node.id
+    e.dataTransfer.setData(NODE_MIME, node.id)
+    e.dataTransfer.effectAllowed = 'move'
+    setDragging(true)
+  }
+  const onDragEnd = () => {
+    draggingNodeId = null
+    setDragging(false)
+    setDropZone(null)
+  }
+  const onDragOver = (e: DragEvent) => {
+    if (!e.dataTransfer.types.includes(NODE_MIME) || draggingNodeId === node.id) return
+    e.preventDefault()
+    const r = e.currentTarget.getBoundingClientRect()
+    const y = e.clientY - r.top
+    setDropZone(y < r.height * 0.3 ? 'before' : y > r.height * 0.7 ? 'after' : 'inside')
+  }
+  const onDrop = (e: DragEvent) => {
+    if (!e.dataTransfer.types.includes(NODE_MIME)) return
+    e.preventDefault()
+    e.stopPropagation()
+    const dragged = e.dataTransfer.getData(NODE_MIME)
+    const zone = dropZone
+    setDropZone(null)
+    if (!dragged || dragged === node.id || !zone) return
+    if (zone === 'inside') {
+      moveNode(dragged, node.id, undefined)
+      expand(node.id)
+    } else {
+      const sibs = childrenOf(nodes, node.parentId)
+      const idx = sibs.findIndex((s) => s.id === node.id)
+      const beforeId = zone === 'before' ? node.id : sibs[idx + 1]?.id
+      moveNode(dragged, node.parentId, beforeId)
+    }
+  }
 
   return (
     <div className="node">
-      <div className="node-row" style={{ paddingLeft: indent }}>
+      <div
+        className={'node-row' + (dragging ? ' dragging' : '') + (dropZone ? ' drop-' + dropZone : '')}
+        style={{ paddingLeft: indent }}
+        onDragOver={onDragOver}
+        onDragLeave={() => setDropZone(null)}
+        onDrop={onDrop}
+      >
+        <span
+          className="drag-grip"
+          title="Drag to move / nest"
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+        >
+          ⠿
+        </span>
         {kids.length > 0 ? (
           <button
             className="node-caret"
@@ -172,31 +277,19 @@ function NodeRow({
         <span className="node-type-icon" title={node.type + ' — click to change'} onClick={() => setTypeOpen((v) => !v)}>
           {iconFor(node)}
         </span>
+        <NumberPrefix node={node} num={num} />
         <input
           className="node-title"
           value={node.title}
+          placeholder={placeholderFor(node)}
           onChange={(e) => updateNode(node.id, { title: e.target.value })}
         />
-        <button className="icon-btn" title="Details" onClick={() => setOpen((v) => !v)}>
-          {open ? '▿' : '…'}
-        </button>
         <div className="node-actions">
           <button className="icon-btn" title="Move up" onClick={() => moveNodeUp(node.id)}>▲</button>
           <button className="icon-btn" title="Move down" onClick={() => moveNodeDown(node.id)}>▼</button>
           <button className="icon-btn" title="Outdent" onClick={() => outdentNode(node.id)}>⇤</button>
           <button className="icon-btn" title="Indent under previous" onClick={() => indentNode(node.id)}>⇥</button>
-          {!isLeafType(node.type) && (
-            <button
-              className="icon-btn"
-              title="Add child"
-              onClick={() => {
-                addNode(node.id, 'note')
-                expand(node.id)
-              }}
-            >
-              ＋
-            </button>
-          )}
+          <button className="icon-btn" title="Add child" onClick={() => { addNode(node.id, 'note'); expand(node.id)}}>＋</button>
           <button className="icon-btn" title="Focus / zoom in" onClick={() => setFocus(node.id)}>⤢</button>
           <button
             className="icon-btn danger"
@@ -251,56 +344,15 @@ function NodeRow({
         </div>
       )}
 
-      {open && (
-        <div className="node-detail" style={{ marginLeft: indent + 22 }}>
-          <div className="flex-row" style={{ gap: 6, marginBottom: 4 }}>
-            <button className="btn btn-sm" onClick={() => setEditing((v) => !v)}>
-              {editing ? 'Preview' : 'Edit'}
-            </button>
-            <button className="btn btn-sm" onClick={() => onPick(node.id)}>
-              {creature ? 'Change creature' : 'Link creature'}
-            </button>
-            <span className="spacer" />
-          </div>
-          {editing ? (
-            <>
-              <textarea
-                className="node-body-edit"
-                placeholder="Markdown — **bold**, # heading, - list, > quote, `code`"
-                value={node.body}
-                onChange={(e) => updateNode(node.id, { body: e.target.value })}
-              />
-              <input
-                type="url"
-                placeholder="Image URL (map / portrait)…"
-                value={node.imageUrl || ''}
-                onChange={(e) => updateNode(node.id, { imageUrl: e.target.value })}
-                style={{ marginTop: 6 }}
-              />
-            </>
-          ) : node.body ? (
-            <Markdown text={node.body} />
-          ) : (
-            <div className="node-empty">No notes. Click Edit.</div>
-          )}
-          {node.imageUrl && <img className="node-image" src={node.imageUrl} alt={node.title} />}
-          {creature && (
-            <div style={{ marginTop: 8 }}>
-              <StatBlock creature={creature} />
-            </div>
-          )}
-        </div>
-      )}
-
       {!isCollapsed &&
         kids.map((k) => (
           <NodeRow
             key={k.id}
             node={k}
+            num={kidNums.get(k.id)!}
             nodes={nodes}
             depth={depth + 1}
             setFocus={setFocus}
-            onPick={onPick}
             collapsed={collapsed}
             toggleCollapsed={toggleCollapsed}
             expand={expand}
@@ -344,25 +396,28 @@ function Breadcrumb({
               title={hasMenu ? 'Switch to a sibling' : undefined}
               onClick={() => (hasMenu ? setMenuFor(open ? null : n.id) : setFocus(n.id))}
             >
-              {iconFor(n)} {n.title}
+              {iconFor(n)} {displayTitle(n)}
               {hasMenu && <span className="crumb-caret">▾</span>}
             </button>
             {open && (
               <>
                 <div className="crumb-overlay" onClick={() => setMenuFor(null)} />
                 <div className="crumb-menu">
-                  {siblings.map((s) => (
-                    <button
-                      key={s.id}
-                      className={'crumb-menu-item' + (s.id === n.id ? ' current' : '')}
-                      onClick={() => {
-                        setFocus(s.id)
-                        setMenuFor(null)
-                      }}
-                    >
-                      {iconFor(s)} {s.title}
-                    </button>
-                  ))}
+                  {(() => {
+                    const nums = siblingNumbers(siblings)
+                    return siblings.map((s) => (
+                      <button
+                        key={s.id}
+                        className={'crumb-menu-item' + (s.id === n.id ? ' current' : '')}
+                        onClick={() => {
+                          setFocus(s.id)
+                          setMenuFor(null)
+                        }}
+                      >
+                        <span className="muted">{nums.get(s.id)}.</span> {iconFor(s)} {displayTitle(s)}
+                      </button>
+                    ))
+                  })()}
                 </div>
               </>
             )}
@@ -377,12 +432,10 @@ function Breadcrumb({
 // ── one card in the board view (renders a single node's content by type) ──────
 function NodeCard({
   node,
-  nodes,
   setFocus,
   onPick,
 }: {
   node: SessionNode
-  nodes: SessionNode[]
   setFocus: (id: string | undefined) => void
   onPick: (id: string) => void
 }) {
@@ -392,7 +445,6 @@ function NodeCard({
   const [editing, setEditing] = useState(false)
   const leaf = isLeafType(node.type)
   const hidden = isHidden(node)
-  const kids = childrenOf(nodes, node.id)
   const creature = node.creatureId ? bestiary.find((b) => b.id === node.creatureId) : undefined
 
   return (
@@ -407,6 +459,7 @@ function NodeCard({
         <input
           className="node-title"
           value={node.title}
+          placeholder={placeholderFor(node)}
           onChange={(e) => updateNode(node.id, { title: e.target.value })}
         />
         <span className="spacer" />
@@ -419,11 +472,9 @@ function NodeCard({
             {editing ? '▿' : '✎'}
           </button>
         )}
-        {!leaf && kids.length > 0 && (
-          <button className="icon-btn" title="Open (focus in)" onClick={() => setFocus(node.id)}>
-            ⤢
-          </button>
-        )}
+        <button className="icon-btn" title="Open (focus in)" onClick={() => setFocus(node.id)}>
+          ⤢
+        </button>
         <button
           className="icon-btn"
           title={hidden ? 'Show on board' : 'Hide from board'}
@@ -474,7 +525,88 @@ function NodeCard({
         ) : (
           <div className="node-empty">No notes. Click ✎ to edit.</div>
         )}
+        {node.type === 'item' && <NodeItems node={node} />}
       </div>
+    </div>
+  )
+}
+
+// ── focused node's OWN content, shown atop its board ─────────────────────────
+// When you zoom into a node, the board shows its children — but a node usually
+// carries its own info (notes, a linked creature, an image, items). This surfaces
+// those as editable cards so you can attach a creature to a statblock, add items
+// to an item node, jot notes, etc. directly, instead of staring at empty space.
+function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (id: string) => void }) {
+  const bestiary = useStore((s) => s.bestiary)
+  const updateNode = useStore((s) => s.updateNode)
+  const creature = node.creatureId ? bestiary.find((b) => b.id === node.creatureId) : undefined
+  const [editingNote, setEditingNote] = useState(false)
+
+  return (
+    <div className="self-content">
+      {/* Notes — every node carries a body. */}
+      <div className="self-card">
+        <div className="self-card-head">
+          <span className="self-card-title">Notes</span>
+          <span className="spacer" />
+          <button
+            className="icon-btn"
+            title={editingNote ? 'Preview' : 'Edit'}
+            onClick={() => setEditingNote((v) => !v)}
+          >
+            {editingNote ? '▿' : '✎'}
+          </button>
+        </div>
+        {editingNote ? (
+          <textarea
+            className="node-body-edit"
+            placeholder="Markdown — **bold**, # heading, - list, > quote"
+            value={node.body}
+            onChange={(e) => updateNode(node.id, { body: e.target.value })}
+          />
+        ) : node.body ? (
+          <Markdown text={node.body} />
+        ) : (
+          <div className="node-empty">No notes. Click ✎ to edit.</div>
+        )}
+      </div>
+      {node.type === 'statblock' && (
+        <div className="self-card">
+          <div className="self-card-head">
+            <span className="self-card-title">Stat Block</span>
+            <span className="spacer" />
+            <button className="btn btn-sm" onClick={() => onPick(node.id)}>
+              {creature ? 'Change creature' : 'Link creature'}
+            </button>
+          </div>
+          {creature ? (
+            <StatBlock creature={creature} />
+          ) : (
+            <div className="node-empty">No creature linked — click “Link creature”.</div>
+          )}
+        </div>
+      )}
+      {node.type === 'image' && (
+        <div className="self-card">
+          <div className="self-card-head">
+            <span className="self-card-title">Image</span>
+          </div>
+          <input
+            type="url"
+            placeholder="Image URL…"
+            value={node.imageUrl || ''}
+            onChange={(e) => updateNode(node.id, { imageUrl: e.target.value })}
+          />
+          {node.imageUrl && (
+            <img className="node-card-img" src={node.imageUrl} alt={node.title} style={{ marginTop: 6 }} />
+          )}
+        </div>
+      )}
+      {node.type === 'item' && (
+        <div className="self-card">
+          <NodeItems node={node} />
+        </div>
+      )}
     </div>
   )
 }
@@ -509,7 +641,9 @@ export function SessionTracker({
   const showHidden = !!config?.showHidden
 
   const roots = childrenOf(nodes, focusId)
+  const rootNums = siblingNumbers(roots)
   const atTop = focusId === undefined
+  const focusNode = focusId ? nodes.find((n) => n.id === focusId) : undefined
 
   // Prev/Next move focus through the focused node's siblings (wrapping). Only
   // meaningful when zoomed into a node that has siblings to cycle between.
@@ -611,15 +745,17 @@ export function SessionTracker({
 
       <div className="session-tree-body">
         {view === 'board' ? (
-          boardItems.length === 0 ? (
-            <div className="empty-hint">
-              {roots.length === 0
-                ? atTop
-                  ? 'No sessions yet — click “+ Card”.'
-                  : 'Nothing here yet — click “+ Card”.'
-                : `All ${hiddenCount} card(s) hidden — click the “Hidden” toggle to reveal.`}
-            </div>
-          ) : (
+          <>
+            {focusNode && <FocusedContent node={focusNode} onPick={setPickerFor} />}
+            {boardItems.length === 0 ? (
+              <div className="empty-hint">
+                {roots.length === 0
+                  ? atTop
+                    ? 'No sessions yet — click “+ Card”.'
+                    : 'No child cards yet — click “+ Card” to add one.'
+                  : `All ${hiddenCount} card(s) hidden — click the “Hidden” toggle to reveal.`}
+              </div>
+            ) : (
             <Board
               items={boardItems}
               cols={boardCols}
@@ -632,10 +768,15 @@ export function SessionTracker({
                 h: 6,
               })}
               renderItem={(n) => (
-                <NodeCard node={n} nodes={nodes} setFocus={setFocus} onPick={setPickerFor} />
+                <NodeCard
+                  node={n}
+                  setFocus={setFocus}
+                  onPick={setPickerFor}
+                />
               )}
             />
-          )
+            )}
+          </>
         ) : roots.length === 0 ? (
           <div className="empty-hint">
             {atTop ? 'No sessions yet. Click “+ Session”.' : 'Nothing here yet. Click “+ Node”.'}
@@ -645,10 +786,10 @@ export function SessionTracker({
             <NodeRow
               key={n.id}
               node={n}
+              num={rootNums.get(n.id)!}
               nodes={nodes}
               depth={0}
               setFocus={setFocus}
-              onPick={setPickerFor}
               collapsed={collapsed}
               toggleCollapsed={toggleCollapsed}
               expand={expand}

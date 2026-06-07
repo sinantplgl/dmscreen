@@ -123,6 +123,40 @@
   border-left: 3px solid transparent;
 }
 .node-row:hover { background: var(--surface); }
+
+/* drag-and-drop */
+.node-row .drag-grip {
+  flex: 0 0 auto;
+  cursor: grab;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  user-select: none;
+  touch-action: none;
+}
+.node-row .drag-grip:active { cursor: grabbing; }
+.node-row.dragging { opacity: 0.4; }
+/* drop indicators: a line above/below for reorder, a frame for nest-inside */
+.node-row.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.node-row.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.node-row.drop-inside { background: var(--card2); outline: 1px dashed var(--accent); outline-offset: -2px; }
+
+/* editable sibling-number prefix */
+.node-number {
+  flex: 0 0 auto;
+  width: 26px;
+  text-align: right;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  padding: 2px 2px !important;
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  font-variant-numeric: tabular-nums;
+}
+.node-number:hover { border-color: var(--border) !important; }
+.node-number:focus { background: var(--surface) !important; border-color: var(--accent) !important; color: var(--text) !important; }
+.node-number.overridden { color: var(--gold) !important; font-weight: 700; }
+
 .node-caret {
   width: 22px;
   flex: 0 0 22px;
@@ -224,3 +258,69 @@
   cursor: pointer;
 }
 .creature-pick:hover { border-color: var(--accent); color: var(--gold); }
+
+/* ── Items (prototype) — attached to item-type nodes ── */
+.node-items {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  background: var(--card2);
+}
+.node-items-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.node-items-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.node-items-tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.node-items-empty {
+  margin-top: 6px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* ── Focused node's own content (shown atop the board) ── */
+.self-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.self-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+.self-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.self-card-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+}

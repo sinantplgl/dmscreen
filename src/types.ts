@@ -237,6 +237,9 @@ export interface SessionNode {
   order: number // position among siblings sharing the same parentId
   type: string // free-form label, e.g. 'session' | 'quest' | 'room' | 'npc' | anything
   icon?: string // optional emoji override; else derived from a preset or a default glyph
+  /** Explicit numbering override. When set, this node shows this number among its
+   *  siblings and the following siblings continue from it; auto-numbered otherwise. */
+  number?: number
   title: string
   body: string // markdown
   collapsed?: boolean // tree expand/collapse (persisted)

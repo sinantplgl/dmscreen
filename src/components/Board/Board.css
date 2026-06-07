@@ -6,7 +6,8 @@
 .board-item .board-card-inner { height: 100%; overflow: auto; box-sizing: border-box; }
 .board-item.dragging { z-index: 5; }
 .board-item.dragging .board-card-inner { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55); }
-.drag-grip { touch-action: none; }
+.drag-grip { touch-action: none; cursor: grab; }
+.drag-grip:active { cursor: grabbing; }
 /* Resize handle in the bottom-right corner of each card. */
 .board-resize {
   position: absolute;

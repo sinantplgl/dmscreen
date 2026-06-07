@@ -195,6 +195,8 @@ interface Actions {
   moveNodeDown: (id: string) => void
   indentNode: (id: string) => void
   outdentNode: (id: string) => void
+  /** Reparent `id` under `newParentId`, placing it before `beforeId` (append if absent). */
+  moveNode: (id: string, newParentId: string | undefined, beforeId?: string) => void
 
   // dice
   rollPool: (dice: number[], modifier: number, times: number) => void
@@ -657,7 +659,8 @@ export const useStore = create<Store>()(
         const id = uid('sn')
         set((s) => {
           const order = childrenOf(s.sessionNodes, parentId).length
-          const node: SessionNode = { id, parentId, order, type, title: `New ${type}`, body: '' }
+          // Title starts empty — the UI shows a `New {type}` placeholder instead.
+          const node: SessionNode = { id, parentId, order, type, title: '', body: '' }
           return { sessionNodes: [...s.sessionNodes, node] }
         })
         return id
@@ -708,6 +711,38 @@ export const useStore = create<Store>()(
           )
           // Renormalize both the old parent group and the new (grandparent) group.
           return { sessionNodes: normalizeOrders(normalizeOrders(moved, parent.parentId), parent.id) }
+        }),
+
+      // Drag-and-drop move: reparent `id` under `newParentId` and place it just
+      // before `beforeId` (append when beforeId is absent). Used by the tree DnD.
+      moveNode: (id, newParentId, beforeId) =>
+        set((s) => {
+          const node = s.sessionNodes.find((n) => n.id === id)
+          if (!node) return s
+          // Reject no-ops and cycles (can't drop a node into itself or a descendant).
+          if (id === newParentId) return s
+          if (newParentId && descendantIds(s.sessionNodes, id).includes(newParentId)) return s
+          const oldParentId = node.parentId
+
+          // Target group = new parent's children, minus the dragged node.
+          const target = childrenOf(s.sessionNodes, newParentId).filter((n) => n.id !== id)
+          let insertAt = beforeId ? target.findIndex((n) => n.id === beforeId) : -1
+          if (insertAt < 0) insertAt = target.length // append
+          const orderedIds = [
+            ...target.slice(0, insertAt).map((n) => n.id),
+            id,
+            ...target.slice(insertAt).map((n) => n.id),
+          ]
+          const orderInNewGroup = new Map(orderedIds.map((nid, i) => [nid, i]))
+
+          let nodes = s.sessionNodes.map((n) => {
+            if (n.id === id) return { ...n, parentId: newParentId, order: orderInNewGroup.get(n.id)! }
+            if (orderInNewGroup.has(n.id)) return { ...n, order: orderInNewGroup.get(n.id)! }
+            return n
+          })
+          // Compact the group the node left behind (if it changed parents).
+          if (oldParentId !== newParentId) nodes = normalizeOrders(nodes, oldParentId)
+          return { sessionNodes: nodes }
         }),
 
       // ── dice ─────────────────────────────────────────────────────────────

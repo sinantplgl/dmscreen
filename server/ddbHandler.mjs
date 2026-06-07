@@ -1,15 +1,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Server-side D&D Beyond proxy for the character import.
+// Server-side D&D Beyond proxy. Two jobs, both server-side so the browser dodges
+// CORS (Vite dev middleware in dev, the Node server in prod):
 //
-// The Player Roster's "Refresh" hits /ddb-api/rendered/:id. This handler runs
-// server-side (Vite dev middleware in dev, the Node server in prod) and drives a
-// headless browser (see scrapeCharacter.mjs) to load the real D&D Beyond sheet so
-// DDB itself computes every value, then returns the parsed result.
-//
-// The caller's CobaltSession cookie (only needed for private / campaign-only
-// characters) is passed in the `x-cobalt` header and handed to the browser
-// session — it is never logged or stored on disk.
+//   /ddb-api/rendered/:id   — character import. Drives a headless browser (see
+//                             scrapeCharacter.mjs) so DDB computes every value,
+//                             then returns the parsed sheet. The caller's
+//                             CobaltSession cookie (private/campaign chars only)
+//                             rides in `x-cobalt` and is never logged or stored.
+//   /ddb-api/monster?url=   — monster import. Monster pages are server-rendered,
+//                             so we just fetch the HTML and hand it back for the
+//                             client to parse (no browser needed). Restricted to
+//                             dndbeyond.com /monsters/ URLs.
 // ─────────────────────────────────────────────────────────────────────────────
+
+const UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
 
 function send(res, status, obj) {
   res.statusCode = status
@@ -18,11 +23,30 @@ function send(res, status, obj) {
 }
 
 /**
- * Handle a request if it targets /ddb-api/rendered/:id. Returns true if it
- * handled the request, false if the caller should continue (e.g. serve static).
+ * Handle a request if it targets /ddb-api/*. Returns true if it handled the
+ * request, false if the caller should continue (e.g. serve static).
  */
 export async function ddbApiHandler(req, res) {
   const url = new URL(req.url, 'http://localhost')
+
+  // ── monster import: fetch the (server-rendered) monster page HTML ──────────
+  if (url.pathname === '/ddb-api/monster') {
+    const target = url.searchParams.get('url') || ''
+    try {
+      const u = new URL(target)
+      if (!/(^|\.)dndbeyond\.com$/.test(u.hostname) || !u.pathname.startsWith('/monsters/')) {
+        throw new Error('Only D&D Beyond /monsters/… URLs can be imported.')
+      }
+      const ddb = await fetch(u.href, { headers: { 'User-Agent': UA, Accept: 'text/html' } })
+      if (!ddb.ok) throw new Error(`D&D Beyond returned ${ddb.status}`)
+      const html = await ddb.text()
+      send(res, 200, { success: true, html })
+    } catch (err) {
+      send(res, 502, { success: false, message: String(err?.message || err) })
+    }
+    return true
+  }
+
   const rendered = url.pathname.match(/^\/ddb-api\/rendered\/(\d+)\/?$/)
   if (!rendered) return false
 

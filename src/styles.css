@@ -392,6 +392,16 @@ label.field > span { display: block; margin-bottom: 2px; letter-spacing: .5px; t
 }
 .overlay.center { align-items: center; justify-content: center; }
 .modal h2 { font-family: 'Cinzel', serif; font-size: 15px; color: var(--gold); letter-spacing: 1px; margin-bottom: 12px; }
+
+/* Full-screen image viewer (see ImageLightbox) */
+.lightbox-img {
+  max-width: 92vw;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .form-grid .full { grid-column: 1 / -1; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }

@@ -72,37 +72,50 @@
   color: var(--p-text);
   font-weight: 400;
 }
-/* Artwork backdrop: anchored left behind the stat header, faded out to the
-   right so the stats stay readable. The image sits below the content layer. */
 .statblock .stat-main {
   position: relative;
-}
-.statblock .stat-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-  /* Image sits on the right and fades out toward the left (right → left). The
-     fade lives on this wrapper so flipping the <img> never moves it. */
-  -webkit-mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.55) 38%, transparent 72%);
-  mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.55) 38%, transparent 72%);
-}
-.statblock .stat-backdrop .backdrop-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: right center;
-  opacity: 0.6;
-}
-.statblock .stat-backdrop .backdrop-img.flip {
-  transform: scaleX(-1);
 }
 .statblock .stat-content {
   position: relative;
   z-index: 1;
+}
+/* Header row: defensive lines on the left, a framed clickable portrait on the
+   right (click → full-size lightbox). Replaces the old faded backdrop so it
+   reads cleanly in both single- and two-column layouts. */
+.statblock .stat-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.statblock .stat-defense {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.statblock .stat-portrait {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  margin-top: 18px;
+  padding: 0;
+  border: 1px solid var(--p-rule);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  overflow: hidden;
+  line-height: 0;
+}
+.statblock .stat-portrait:hover {
+  border-color: #922610;
+}
+.statblock .stat-portrait img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.statblock-2024.two-col .stat-portrait {
+  width: 60px;
+  height: 60px;
 }
 
 /* 2024 puts AC and Initiative together on the first defensive line. */
@@ -203,6 +216,32 @@
   border-bottom: 1.5px solid var(--p-rule);
   margin: 12px 0 5px;
   padding-bottom: 2px;
+}
+
+/* ── Two-column layout (wide blocks) ───────────────────────────────────────
+   CSS multi-column auto-balances the two columns and keeps source order. The
+   name + its divider span both; everything else flows. `break-inside: avoid`
+   keeps coupled blocks intact — crucially `.stat-main`, whose artwork backdrop
+   is absolutely-positioned and would render unpredictably if a column break
+   landed inside it. */
+.statblock-2024.two-col {
+  column-count: 2;
+  column-gap: 28px;
+}
+.statblock-2024.two-col .creature-name,
+.statblock-2024.two-col .creature-name + .tapered-rule {
+  column-span: all;
+}
+.statblock-2024.two-col .stat-main,
+.statblock-2024.two-col .def-line,
+.statblock-2024.two-col .ability-cols,
+.statblock-2024.two-col .prop-list,
+.statblock-2024.two-col .entry {
+  break-inside: avoid;
+}
+/* keep a section heading attached to the entry beneath it */
+.statblock-2024.two-col .section-heading {
+  break-after: avoid;
 }
 
 /* Trait / action entries — 2024 uses bold (not italic) lead-in names. */

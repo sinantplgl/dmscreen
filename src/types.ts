@@ -190,6 +190,8 @@ export interface Creature {
   /** 2024 stat blocks split these out from Actions. */
   bonusActions?: StatEntry[]
   reactions?: StatEntry[]
+  /** Preamble shown above the legendary actions (the "Legendary Action Uses: N…" line). */
+  legendaryIntro?: string
   legendary?: StatEntry[]
   /** 2024 Monster Manual footer lines. */
   habitat?: string

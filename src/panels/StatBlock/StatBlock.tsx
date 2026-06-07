@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { Creature, StatEntry } from '../../types'
 import {
   ABILITY_LABELS,
@@ -6,6 +7,11 @@ import {
   parseSaves,
   proficiencyBonusForCr,
 } from '../../lib/dnd'
+import { ImageLightbox } from '../../components/ImageLightbox'
+
+// Below this width the block stays single-column; at/above it splits into two
+// balanced columns (the name + its divider still span the full width).
+const TWO_COL_MIN_PX = 690
 
 function PropLine({ label, value }: { label: string; value: string }) {
   return (
@@ -66,23 +72,52 @@ function AbilityColumn({
   )
 }
 
-function Section({ heading, entries }: { heading?: string; entries?: StatEntry[] }) {
-  if (!entries || entries.length === 0) return null
+function Section({
+  heading,
+  intro,
+  entries,
+}: {
+  heading?: string
+  intro?: string
+  entries?: StatEntry[]
+}) {
+  const hasEntries = !!entries && entries.length > 0
+  if (!hasEntries && !intro) return null
   return (
     <>
       {heading && <div className="section-heading">{heading}</div>}
-      {entries.map((e, i) => (
-        <div className="entry" key={i}  style={{marginTop: 15}}>
-          <span className="entry-name">{e.name}. </span>
-          {e.text}
+      {intro && (
+        <div className="entry section-intro" style={{ marginTop: 12, fontStyle: 'italic', opacity: 0.85 }}>
+          {intro}
         </div>
-      ))}
+      )}
+      {hasEntries &&
+        entries!.map((e, i) => (
+          <div className="entry" key={i} style={{ marginTop: 15 }}>
+            {e.name && <span className="entry-name">{e.name}. </span>}
+            {e.text}
+          </div>
+        ))}
     </>
   )
 }
 
 /** 2024 (5.5e) Monster Manual stat block (read-only display). */
 export function StatBlock({ creature }: { creature: Creature }) {
+  // Split into two balanced columns once the block is wide enough.
+  const ref = useRef<HTMLDivElement>(null)
+  const [twoCol, setTwoCol] = useState(false)
+  const [lightbox, setLightbox] = useState(false)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setTwoCol(el.clientWidth >= TWO_COL_MIN_PX)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const c = creature
   const saveOverrides = parseSaves(c.saves)
   const initiative = c.initiative?.trim() || initiativeFromDex(c.abilities.dex)
@@ -93,35 +128,44 @@ export function StatBlock({ creature }: { creature: Creature }) {
   const immunities = [c.damageImmunities, c.conditionImmunities].filter(Boolean).join('; ')
 
   return (
-    <div className="parchment">
-      <div className="statblock statblock-2024">
+    <div className="parchment" ref={ref}>
+      <div className={'statblock statblock-2024' + (twoCol ? ' two-col' : '')}>
         <div className="creature-name">{c.name}</div>
         <div className="tapered-rule" />
         <div className="type-line">{c.meta}</div>
 
         <div className="stat-main">
-          {c.imageUrl && (
-            <div className="stat-backdrop" aria-hidden="true">
-              <img
-                className={'backdrop-img' + (c.imageFlip ? ' flip' : '')}
-                src={c.imageUrl}
-                alt=""
-              />
-            </div>
-          )}
           <div className="stat-content">
-            <div className="def-line" style={{marginTop: 20}}>
-              <span>
-                <span className="label">AC </span>
-                <span className="value">{c.ac}</span>
-              </span>
-              <span>
-                <span className="label">Initiative </span>
-                <span className="value">{initiative}</span>
-              </span>
+            <div className="stat-header">
+              <div className="stat-defense">
+                <div className="def-line" style={{ marginTop: 20 }}>
+                  <span>
+                    <span className="label">AC </span>
+                    <span className="value">{c.ac}</span>
+                  </span>
+                  <span>
+                    <span className="label">Initiative </span>
+                    <span className="value">{initiative}</span>
+                  </span>
+                </div>
+                <PropLine label="HP" value={c.hp} />
+                <PropLine label="Speed" value={c.speed} />
+              </div>
+              {c.imageUrl && (
+                <button
+                  type="button"
+                  className="stat-portrait"
+                  title="Click to enlarge"
+                  onClick={() => setLightbox(true)}
+                >
+                  <img
+                    src={c.imageUrl}
+                    alt={c.name}
+                    style={c.imageFlip ? { transform: 'scaleX(-1)' } : undefined}
+                  />
+                </button>
+              )}
             </div>
-            <PropLine label="HP" value={c.hp} />
-            <PropLine label="Speed" value={c.speed} />
 
             <div className="ability-cols" style={{marginTop: 10}}>
               <AbilityColumn keys={['str', 'dex', 'con']} c={c} saves={saveOverrides} col={1} />
@@ -145,7 +189,7 @@ export function StatBlock({ creature }: { creature: Creature }) {
         <Section heading="Actions" entries={c.actions} />
         <Section heading="Bonus Actions" entries={c.bonusActions} />
         <Section heading="Reactions" entries={c.reactions} />
-        <Section heading="Legendary Actions" entries={c.legendary} />
+        <Section heading="Legendary Actions" intro={c.legendaryIntro} entries={c.legendary} />
 
         {(c.habitat || c.treasure) && (
           <>
@@ -157,6 +201,9 @@ export function StatBlock({ creature }: { creature: Creature }) {
           </>
         )}
       </div>
+      {lightbox && c.imageUrl && (
+        <ImageLightbox src={c.imageUrl} alt={c.name} flip={c.imageFlip} onClose={() => setLightbox(false)} />
+      )}
     </div>
   )
 }

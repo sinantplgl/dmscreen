@@ -5,6 +5,7 @@ import { ABILITY_KEYS, ABILITY_LABELS } from '../../lib/dnd'
 import type { Abilities, Creature, StatEntry } from '../../types'
 import { StatBlock } from '../StatBlock'
 import { SwordsIcon } from '../../components/icons'
+import { sourceForUrl } from '../../bestiary'
 
 // ── editor for a list of named trait/action entries ─────────────────────────
 function EntryListEditor({
@@ -206,6 +207,14 @@ function CreatureEditModal({ creature, onClose }: { creature: Creature; onClose:
           entries={d.reactions || []}
           onChange={(reactions) => f({ reactions })}
         />
+        <label className="field full" style={{ marginBottom: 6 }}>
+          <span>Legendary Actions — intro (the "Legendary Action Uses…" preamble)</span>
+          <textarea
+            rows={2}
+            value={d.legendaryIntro || ''}
+            onChange={(e) => f({ legendaryIntro: e.target.value })}
+          />
+        </label>
         <EntryListEditor
           label="Legendary Actions"
           entries={d.legendary || []}
@@ -237,11 +246,86 @@ function CreatureEditModal({ creature, onClose }: { creature: Creature; onClose:
   )
 }
 
+// ── add a creature: import from a URL, or start blank (both open the editor) ──
+function AddCreatureModal({
+  onClose,
+  onAdded,
+}: {
+  onClose: () => void
+  onAdded: (id: string) => void
+}) {
+  const addCreature = useStore((s) => s.addCreature)
+  const addCreatureFrom = useStore((s) => s.addCreatureFrom)
+  const [url, setUrl] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string>()
+
+  const doImport = async () => {
+    const trimmed = url.trim()
+    const source = sourceForUrl(trimmed)
+    if (!source) {
+      setError('No importer matches that link. Currently supported: D&D Beyond monster pages (…/monsters/…).')
+      return
+    }
+    setLoading(true)
+    setError(undefined)
+    try {
+      const data = await source.fetchMonster(trimmed)
+      onAdded(addCreatureFrom(data))
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="overlay center" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 'min(480px, 95vw)' }}>
+        <h2>Add Creature</h2>
+        <label className="field full">
+          <span>Import from a link</span>
+          <input
+            type="url"
+            placeholder="https://www.dndbeyond.com/monsters/…"
+            value={url}
+            autoFocus
+            disabled={loading}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && url.trim()) doImport()
+            }}
+          />
+        </label>
+        <div className="muted" style={{ fontSize: 12 }}>
+          Paste a public D&D Beyond monster page — the stat block fills in automatically and stays
+          fully editable. (More sources later.)
+        </div>
+        {error && (
+          <div style={{ color: 'var(--red)', fontSize: 13, marginTop: 8 }}>{error}</div>
+        )}
+        <div className="modal-actions">
+          <button className="btn" disabled={loading} onClick={() => onAdded(addCreature())}>
+            Start blank
+          </button>
+          <span className="spacer" />
+          <button className="btn" disabled={loading} onClick={onClose}>
+            Cancel
+          </button>
+          <button className="btn btn-accent" disabled={!url.trim() || loading} onClick={doImport}>
+            {loading ? 'Importing…' : 'Import'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Bestiary() {
   const bestiary = useStore((s) => s.bestiary)
-  const addCreature = useStore((s) => s.addCreature)
   const sendToCombat = useStore((s) => s.sendCreatureToCombat)
   const [search, setSearch] = useState('')
+  const [adding, setAdding] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
 
@@ -257,7 +341,7 @@ export function Bestiary() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="btn btn-accent" onClick={() => setEditId(addCreature())}>
+        <button className="btn btn-accent" onClick={() => setAdding(true)}>
           + Creature
         </button>
       </div>
@@ -291,6 +375,15 @@ export function Bestiary() {
       })}
       {filtered.length === 0 && <div className="empty-hint">No creatures match “{search}”.</div>}
 
+      {adding && (
+        <AddCreatureModal
+          onClose={() => setAdding(false)}
+          onAdded={(id) => {
+            setAdding(false)
+            setEditId(id)
+          }}
+        />
+      )}
       {editing && <CreatureEditModal creature={editing} onClose={() => setEditId(null)} />}
     </div>
   )

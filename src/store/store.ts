@@ -177,6 +177,7 @@ interface Actions {
 
   // bestiary
   addCreature: () => string
+  addCreatureFrom: (data: Partial<Creature>) => string
   updateCreature: (id: string, patch: Partial<Creature>) => void
   removeCreature: (id: string) => void
 
@@ -576,6 +577,31 @@ export const useStore = create<Store>()(
               cr: '0 (10 XP)',
               traits: [],
               actions: [],
+            },
+            ...s.bestiary,
+          ],
+        }))
+        return id
+      },
+
+      // Create a creature from imported/partial data, filling any gaps with the
+      // same blank defaults addCreature uses. Returns the new id.
+      addCreatureFrom: (data) => {
+        const id = uid('cr')
+        set((s) => ({
+          bestiary: [
+            {
+              id,
+              name: 'New Creature',
+              meta: 'Medium humanoid, unaligned',
+              ac: '10',
+              hp: '10 (3d8)',
+              speed: '30 ft.',
+              abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+              cr: '0 (10 XP)',
+              traits: [],
+              actions: [],
+              ...data
             },
             ...s.bestiary,
           ],

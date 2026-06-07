@@ -70,10 +70,21 @@ function extract() {
     txt(q('[class*="ArmorClass"] [class*="value"]')) ||
     txt(q('[class*="armor-class"] [class*="value"]'))
 
-  // ── hit points ── (text reads like "...Current 8 / Max Max hit points 11 Temp --")
+  // ── hit points ── DDB renders this box two ways depending on layout/browser:
+  //   expanded: "...Current 8 / Max Max hit points 11 Temp --"  (labelled)
+  //   compact:  "Hit Points17/27"                               (current/max)
   const healthText = txt(q('[class*="quick-info__health"]')) || txt(q('[class*="health"]')) || ''
-  const hpCurrent = (healthText.match(/Current\s*([0-9]+)/i) || [])[1] ?? null
-  const hpMax = (healthText.match(/Max hit points\s*([0-9]+)/i) || [])[1] ?? null
+  let hpCurrent = (healthText.match(/Current\s*([0-9]+)/i) || [])[1] ?? null
+  let hpMax = (healthText.match(/Max hit points\s*([0-9]+)/i) || [])[1] ?? null
+  // Fallback for the compact "N/M" form. The labelled form has no bare "N/M"
+  // (it reads "8 / Max …"), so this only fires when the labels were absent.
+  if (hpCurrent == null || hpMax == null) {
+    const slash = healthText.match(/([0-9]+)\s*\/\s*([0-9]+)/)
+    if (slash) {
+      if (hpCurrent == null) hpCurrent = slash[1]
+      if (hpMax == null) hpMax = slash[2]
+    }
+  }
   const hpDebug = healthText
 
   // ── senses / passive scores ── the number PRECEDES the label, e.g. "13Passive Perception"

@@ -34,8 +34,8 @@ export async function ddbApiHandler(req, res) {
     send(res, 200, { success: true, data })
   } catch (err) {
     const msg = String(err?.message || err)
-    const hint = /Cannot find package 'playwright'|Executable doesn't exist|channel/.test(msg)
-      ? 'The headless browser is not available. Run `npx playwright install chromium-headless-shell`, or set BROWSER_CDP_URL to a browser on your host.'
+    const hint = /Cannot find package 'playwright'|Executable doesn't exist|channel|connectOverCDP|chromium\.connect|ECONNREFUSED|ENOTFOUND/.test(msg)
+      ? 'The headless browser is not available. In Docker, start it with `docker compose --profile browserless up`; locally, run `npx playwright install chromium-headless-shell`; or set BROWSER_CDP_URL to a browser on your host.'
       : msg
     send(res, 502, { success: false, message: hint })
   }

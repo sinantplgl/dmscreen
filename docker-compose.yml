@@ -7,17 +7,30 @@
 # localStorage; use the in-app Export / Import to move it between machines.
 #
 # ── "D&D Beyond (exact / rendered)" inside Docker ─────────────────────────────
-# The app image has NO browser baked in (keeps it tiny). The rendered scrape is
-# served instead by a self-hosted `browserless` container on the compose network;
-# dm-screen connects to it over CDP via BROWSER_CDP_URL. browserless launches
-# Chrome on-demand per scrape and reaps it, so nothing heavy runs while idle.
+# The app image has NO browser baked in (keeps it tiny). The rendered scrape
+# needs a browser to drive — pick ONE of these, or neither:
 #
-# No browserless.io account is needed — TOKEN is a secret you choose; it just has
-# to match the ?token= in BROWSER_CDP_URL below. The browserless port is NOT
-# published, so its CDP endpoint is reachable only by dm-screen, not your LAN.
+#  A) Bundled browser, zero host setup (opt-in `browserless` profile):
+#       docker compose --profile browserless up -d --build
+#     Pulls a ~1GB image once; dm-screen drives it over the compose network.
+#     browserless spawns Chrome on-demand per scrape, so it's idle-cheap.
 #
-# Start everything with:  docker compose up -d --build
-# The "D&D Beyond (native)" JSON provider works without any browser regardless.
+#  B) Your own browser on the HOST (no extra image to pull). On the host:
+#       npx playwright install chromium-headless-shell        # once
+#       chromium-headless-shell --headless --remote-debugging-port=9222 \
+#           --remote-debugging-address=0.0.0.0                # leave running
+#     then point the app at it (overrides the default below):
+#       BROWSER_CDP_URL=http://host.docker.internal:9222 docker compose up -d --build
+#     (An open debugging port is sensitive — keep it on a trusted network.)
+#
+#  C) Neither: `docker compose up -d --build`. The rendered scrape reports that
+#     no browser is available; the "D&D Beyond (native)" JSON provider still
+#     works fully.
+#
+# BROWSER_CDP_URL defaults to the browserless service so route A needs no extra
+# env. No browserless.io account is needed — TOKEN is a secret you choose; it
+# just has to match the ?token= below. browserless publishes no host port, so
+# its CDP endpoint is reachable only by dm-screen, not your LAN.
 services:
   dm-screen:
     build: .
@@ -25,15 +38,16 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # talk to the browserless service over the compose network
-      - BROWSER_CDP_URL=ws://browserless:3000?token=local-dev-token
-    depends_on:
-      - browserless
+      # defaults to the browserless service (route A); override for route B
+      - BROWSER_CDP_URL=${BROWSER_CDP_URL:-ws://browserless:3000?token=local-dev-token}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   browserless:
     image: ghcr.io/browserless/chromium:latest
     container_name: dm-screen-browser
+    profiles: ["browserless"]   # opt-in: only starts with `--profile browserless`
     environment:
       - TOKEN=local-dev-token   # required by browserless v2; must match ?token= above
       - CONCURRENT=1            # one scrape at a time is plenty for character imports

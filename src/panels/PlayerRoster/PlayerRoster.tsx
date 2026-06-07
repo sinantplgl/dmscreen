@@ -271,7 +271,10 @@ function PlayerSheetCard({
         )}
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="sheet-name">{player.name}</div>
-          <div className="sheet-sub">{sheet?.summary || `${player.className} · Lvl ${player.level}`}</div>
+          <div className="sheet-sub">
+            {player.className}
+            {player.level ? ` · Level ${player.level}` : ''}
+          </div>
         </div>
         <div className="sheet-head-actions">
           <button

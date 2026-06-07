@@ -542,6 +542,8 @@ export const useStore = create<Store>()(
               ...p,
               sheet,
               name: sheet.name || p.name,
+              className: sheet.classSummary || p.className,
+              level: sheet.level ?? p.level,
               portraitUrl: sheet.avatarUrl || p.portraitUrl,
               ac: sheet.ac ?? p.ac,
               maxHp: sheet.hpMax ?? p.maxHp,

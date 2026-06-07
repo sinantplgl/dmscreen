@@ -91,6 +91,10 @@ export interface SkillStat {
 export interface CharacterSheet {
   name: string
   summary?: string | null
+  /** Class line as DDB shows it, e.g. "Fighter (Battle Master)" or "Fighter / Rogue". */
+  classSummary?: string | null
+  /** Total character level. */
+  level?: number | null
   avatarUrl?: string | null
   ac: number | null
   hpCurrent: number | null

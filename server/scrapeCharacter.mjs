@@ -119,6 +119,35 @@ function extract() {
   const avatarEl = q('[class*="ddbc-character-avatar"] img, [class*="character-avatar"] img')
   const avatarUrl = avatarEl ? avatarEl.getAttribute('src') : null
 
+  // ── class & level ── shown in the header summary under the name. Markup varies,
+  // so gather class-name chips a few ways and parse a total level; debug below
+  // surfaces what was seen so selectors can be re-tuned if DDB shifts its markup.
+  const summaryText =
+    txt(q('[class*="ddbc-character-summary"]')) || txt(q('[class*="character-summary"]')) || ''
+  const classChips = qa(
+    '[class*="character-summary__classes"], [class*="summary__classes"], ' +
+      '[class*="ddbc-character-summary"] [class*="class"], [class*="class-summary"]',
+  )
+    .map(txt)
+    .filter((s) => s && !/^manage$/i.test(s) && s !== name)
+  // The chip(s) read like "Ranger 4" or "Fighter 5 / Rogue 2" — class name + that
+  // class's level. Split off the digits: total level vs. clean class-name string.
+  const rawClasses = Array.from(new Set(classChips)).join(' / ')
+  let level = null
+  const lvlM = summaryText.match(/Level\s*([0-9]+)/i)
+  if (lvlM) level = parseInt(lvlM[1], 10)
+  else {
+    // total character level = sum of the per-class levels
+    const nums = (rawClasses.match(/[0-9]+/g) || []).map(Number)
+    if (nums.length) level = nums.reduce((a, b) => a + b, 0)
+  }
+  const classSummary =
+    rawClasses
+      .replace(/\b\d+\b/g, ' ')
+      .replace(/\s*\/\s*/g, ' / ')
+      .replace(/\s+/g, ' ')
+      .trim() || null
+
   // active conditions (box shows "Add Active Conditions" when there are none)
   const condText = txt(q('[class*="ct-conditions"]')) || ''
   const conditions = /Add Active Conditions/i.test(condText) ? [] : condText ? [condText] : []
@@ -128,6 +157,8 @@ function extract() {
   return {
     name,
     summary,
+    classSummary,
+    level,
     avatarUrl,
     ac: num(acText),
     hpCurrent: num(hpCurrent),
@@ -144,7 +175,7 @@ function extract() {
     passivePerception: passiveOf('Perception'),
     passiveInvestigation: passiveOf('Investigation'),
     passiveInsight: passiveOf('Insight'),
-    debug: { acText, hpDebug, sensesText },
+    debug: { acText, hpDebug, sensesText, summaryText, classChips },
   }
 }
 /* eslint-enable */

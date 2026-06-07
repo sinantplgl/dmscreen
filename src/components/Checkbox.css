@@ -1,0 +1,56 @@
+/* Themed checkbox — see Checkbox.tsx. */
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Visually hide the real input, but keep it focusable & in the tab order. */
+.checkbox-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.checkbox-box {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.checkbox:hover .checkbox-box {
+  border-color: var(--accent);
+}
+.checkbox-input:checked + .checkbox-box {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.checkbox-input:focus-visible + .checkbox-box {
+  box-shadow: 0 0 0 2px rgba(200, 146, 42, 0.45);
+}
+.checkbox-check {
+  font-size: 13px;
+}
+
+.checkbox-label {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.3;
+}

@@ -1,0 +1,126 @@
+/* ── PLAYER CARD (legacy compact card) ── */
+.player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.player-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
+.player-top { display: flex; gap: 10px; align-items: center; }
+.player-portrait {
+  width: 52px; height: 52px; border-radius: 4px; object-fit: cover;
+  border: 1px solid var(--accent2); flex-shrink: 0; background: var(--card2);
+}
+.player-portrait.placeholder {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-family: 'Cinzel', serif; font-size: 20px;
+}
+.player-name { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); }
+.player-class { font-size: 12px; color: var(--muted); font-style: italic; }
+.player-vitals { display: flex; gap: 6px; margin: 8px 0; }
+.vital-box { flex: 1; background: var(--card2); border: 1px solid var(--border); border-radius: 3px; text-align: center; padding: 4px; }
+.vital-box .val { font-family: 'Cinzel', serif; font-size: 16px; color: var(--text); font-weight: 700; }
+.vital-box .lbl { font-size: 9px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
+/* .ability-row/.ability-box are shared with the Bestiary editor. */
+.ability-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.ability-box { background: var(--card2); border: 1px solid var(--border); border-radius: 3px; text-align: center; padding: 3px 1px; }
+.ability-box .lbl { font-size: 8px; color: var(--muted); letter-spacing: .5px; }
+.ability-box .score { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--text); }
+.ability-box .mod { font-size: 10px; color: var(--accent); }
+.player-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+/* ── PLAYER ROSTER: parties + framed, compact character-sheet cards ── */
+.roster-toolbar { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.sheet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; align-items: start; }
+.sheet-card {
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px 8px;
+}
+.sheet-head { display: flex; gap: 9px; align-items: center; }
+.sheet-portrait {
+  width: 44px; height: 44px; border-radius: 5px; object-fit: cover;
+  border: 1px solid var(--accent); flex-shrink: 0; background: var(--card2);
+}
+.sheet-portrait.placeholder { display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 18px; color: var(--muted); }
+.sheet-name { font-family: 'Cinzel', serif; font-size: 15px; color: var(--gold); line-height: 1.1; }
+.sheet-sub { font-size: 11px; color: var(--muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-head-actions { display: flex; gap: 1px; }
+
+/* reusable framed panel with a header bar (the "sheet" look) */
+.framed { border: 1px solid var(--border); border-radius: 5px; background: var(--card2); overflow: hidden; }
+.framed-h { font-family: 'Cinzel', serif; font-weight: 700; font-size: 7.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent2); text-align: center; padding: 3px 2px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.framed-body { padding: 5px; }
+
+/* ability tiles — name header, big modifier, score "node" hanging at the base */
+.abil-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 9px 0 13px; }
+.abil-tile {
+  position: relative; text-align: center; padding: 2px 0 11px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card2);
+}
+.abil-name { font-family: 'Cinzel', serif; font-weight: 700; font-size: 8px; letter-spacing: .5px; color: var(--gold); padding-bottom: 1px; margin: 0 5px 1px; border-bottom: 1px solid var(--border); }
+.abil-mod { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.abil-score {
+  position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
+  min-width: 23px; height: 17px; line-height: 15px;
+  font-size: 11px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--accent); border-radius: 9px;
+}
+
+/* side-by-side matrices: combat 2×2 | saving throws 3×2 */
+.sheet-cols { display: grid; grid-template-columns: 1fr 1.15fr; gap: 6px; align-items: stretch; }
+
+/* the two stacked halves of the side-by-side area */
+.sheet-col { display: flex; flex-direction: column; gap: 6px; }
+
+/* Combat panel: AC shield + Init/Speed/Prof stacked beside it */
+.combat-flex { display: flex; gap: 6px; align-items: center; }
+.combat-rest { display: grid; grid-template-rows: repeat(3, 1fr); gap: 4px; flex: 1; }
+.ac-shield {
+  position: relative; width: 45px; height: 45px; flex-shrink: 0; margin: 2px 2px 2px 0;
+  background: var(--accent); /* gold edge */
+  clip-path: url(#shieldClip); /* smooth shield curve, defined in App.tsx */
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.ac-shield::before {
+  content: ''; position: absolute; inset: 2px; background: var(--card2);
+  clip-path: url(#shieldClip);
+}
+.ac-v { position: relative; font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: var(--text); line-height: 1; margin-top: 2px; }
+.ac-l { position: relative; font-size: 7px; letter-spacing: .5px; color: var(--gold); text-transform: uppercase; }
+
+.mini2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; height: 100%; }
+.mini-stat { text-align: center; background: rgba(0, 0, 0, 0.20); border: 1px solid var(--border); border-radius: 4px; padding: 3px 2px; display: flex; flex-direction: column; justify-content: center; }
+.mini-stat .v { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.mini-stat .l { font-size: 7px; letter-spacing: .3px; text-transform: uppercase; color: var(--muted); margin-top: 1px; }
+
+.saves-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.save-chip { display: flex; flex-direction: column; align-items: center; background: rgba(0, 0, 0, 0.20); border: 1px solid var(--border); border-left-width: 3px; border-radius: 4px; padding: 2px; }
+.save-chip.on { border-color: var(--accent); border-left-color: var(--gold); }
+.save-ab { font-size: 7px; letter-spacing: .4px; color: var(--muted); }
+.save-chip.on .save-ab { color: var(--gold); }
+.save-bonus { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.1; }
+
+/* compact HP line with bar */
+.hp-line { display: flex; align-items: center; gap: 8px; margin: 8px 0 6px; }
+.hp-line .hp-lbl { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent2); }
+.hp-line .hp-val { font-family: 'Cinzel', serif; font-size: 13px; color: var(--text); white-space: nowrap; }
+.hp-line .hp-val .muted { font-weight: 400; }
+.hp-line .hp-temp { color: var(--green); font-size: 11px; }
+.hp-line .hp-bar { flex: 1; height: 7px; }
+
+/* passives (3 across) + senses line */
+.passives-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.senses-line { font-size: 11px; color: var(--muted); text-align: center; margin-top: 5px; }
+.senses-line .sense-chip { color: var(--text); }
+
+.sheet-skills { margin-top: 8px; }
+.sheet-skills > summary { cursor: pointer; font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.sheet-skills > summary:hover { color: var(--gold); }
+.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; margin-top: 6px; }
+.skill-row { display: flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 1px 0; }
+.skill-dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--muted); flex-shrink: 0; }
+.skill-row.on .skill-dot { background: var(--gold); border-color: var(--gold); }
+.skill-row.expertise .skill-dot { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--gold); }
+.skill-row.half .skill-dot { border-color: var(--gold); background: transparent; }
+.skill-name { flex: 1; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-row.on .skill-name, .skill-row.expertise .skill-name, .skill-row.half .skill-name { color: var(--text); }
+.skill-row.expertise .skill-bonus { color: var(--gold); }
+.skill-bonus { font-family: 'Cinzel', serif; color: var(--text); }
+
+.sheet-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 10px; }

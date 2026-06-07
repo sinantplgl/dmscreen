@@ -1,0 +1,5 @@
+/* ── BESTIARY ── */
+/* Inline image-flip toggle (creature editor): lights up gold when active. */
+.flip-toggle { white-space: nowrap; padding: 2px 11px; font-size: 10px; align-self: stretch; }
+.flip-toggle.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.flip-toggle.on:hover { background: var(--gold); border-color: var(--gold); color: var(--bg); }

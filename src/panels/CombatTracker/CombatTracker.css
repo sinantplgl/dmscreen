@@ -1,0 +1,84 @@
+/* ── COMBAT TRACKER ── */
+.round-counter {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Cinzel', serif; font-size: 12px; color: var(--muted);
+  margin-bottom: 10px;
+}
+.round-counter strong { color: var(--gold); font-size: 20px; }
+.combatant {
+  display: grid;
+  grid-template-columns: 40px 36px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  margin-bottom: 4px;
+  background: var(--surface);
+}
+.combatant.active-turn { background: #1e1a10; border-color: var(--accent); }
+.combatant.drop-target { box-shadow: 0 -2px 0 var(--accent); }
+.init-badge {
+  width: 26px; height: 26px;
+  background: var(--accent2); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700;
+  color: var(--text); cursor: grab;
+}
+.combatant.active-turn .init-badge { background: var(--accent); }
+/* editable initiative + drag grip */
+.combat-portrait-cell { cursor: pointer; }
+.combat-portrait {
+  width: 40px; height: 40px; border-radius: 5px; object-fit: cover;
+  border: 1px solid var(--accent); background: var(--card2); display: block;
+}
+.combat-portrait.placeholder {
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif; font-size: 16px; color: var(--muted);
+}
+.portrait-edit { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+.portrait-edit input { flex: 1; }
+.init-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.init-input {
+  width: 34px; padding: 2px 0; text-align: center;
+  font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700;
+  background: var(--accent2); border: 1px solid var(--accent2); border-radius: 4px; color: var(--text);
+  -moz-appearance: textfield; appearance: textfield;
+}
+.init-input.active { background: var(--accent); border-color: var(--accent); }
+.init-input::-webkit-outer-spin-button, .init-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.init-grip { cursor: grab; color: var(--muted); font-size: 11px; line-height: 1; user-select: none; }
+.init-grip:active { cursor: grabbing; }
+.c-name { font-weight: 600; font-size: 14px; }
+.c-name-link { cursor: pointer; }
+.c-name-link:hover { color: var(--gold); text-decoration: underline; }
+.dup-num { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 4px; opacity: 0.7; }
+.c-type { font-size: 11px; color: var(--muted); }
+/* HP bar/fill/text are shared with the Player Roster's compact hp-line. */
+.hp-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 3px; }
+.hp-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+.hp-fill.high { background: var(--green); }
+.hp-fill.mid { background: var(--accent); }
+.hp-fill.low { background: var(--red); }
+.hp-text { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.hp-text strong { color: var(--text); }
+.ac-badge {
+  background: var(--blue); color: var(--text);
+  font-family: 'Cinzel', serif; font-size: 10px;
+  padding: 1px 6px; border-radius: 2px; white-space: nowrap;
+}
+.condition-tag {
+  display: inline-block; background: #3a1f1f; color: #d47a7a;
+  font-size: 10px; padding: 1px 5px; border-radius: 2px;
+  margin: 3px 3px 0 0; letter-spacing: .5px; cursor: pointer;
+}
+.combat-row-2 { display: flex; gap: 5px; align-items: center; margin-top: 2px; }
+/* .mini-input is shared (Combat / Player Roster / Bestiary). */
+.mini-input { width: 46px !important; padding: 2px 4px !important; font-size: 12px !important; text-align: center; }
+.add-row { display: grid; grid-template-columns: 1fr 64px 64px auto; gap: 6px; margin-top: 8px; }
+.cond-picker { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
+.cond-pick {
+  font-size: 10px; padding: 1px 6px; border-radius: 2px; cursor: pointer;
+  background: var(--card2); color: var(--muted); border: 1px solid var(--border);
+}
+.cond-pick.on { background: #3a1f1f; color: #d47a7a; border-color: var(--accent2); }

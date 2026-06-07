@@ -1,0 +1,32 @@
+# Run the DM Screen as a web service on your laptop:
+#   docker compose up -d --build
+# then open http://localhost:8080
+#
+# The container is a tiny Node server that serves the built site AND the
+# /ddb-api proxy. It is stateless — your data lives in each browser's
+# localStorage; use the in-app Export / Import to move it between machines.
+#
+# ── "D&D Beyond (exact / rendered)" inside Docker ─────────────────────────────
+# The image has NO browser. To use the rendered scrape from the container, run a
+# headless browser on your HOST and point BROWSER_CDP_URL at it. On the host:
+#
+#   npx playwright install chromium-headless-shell        # once
+#   chromium-headless-shell --headless --remote-debugging-port=9222 \
+#       --remote-debugging-address=0.0.0.0                # leave running
+#
+# then start compose with:  BROWSER_CDP_URL=http://host.docker.internal:9222 docker compose up -d --build
+# (Heads-up: an open remote-debugging port is sensitive — only expose it on a
+# trusted local network.) If BROWSER_CDP_URL is unset, the rendered view simply
+# reports that no browser is available; the "D&D Beyond (native)" JSON provider
+# still works fully without any browser.
+services:
+  dm-screen:
+    build: .
+    container_name: dm-screen
+    ports:
+      - "8080:8080"
+    environment:
+      - BROWSER_CDP_URL=${BROWSER_CDP_URL:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

@@ -1,0 +1,30 @@
+/* ── Free-placement board (shared by Reference + Session Tracker board view) ── */
+.ref-board { position: relative; }
+/* Each card fills its absolutely-positioned cell; content scrolls if it overflows. */
+.board-item { box-sizing: border-box; }
+/* The card wrapper fills the cell; consumers add their own look via itemClassName. */
+.board-item .board-card-inner { height: 100%; overflow: auto; box-sizing: border-box; }
+.board-item.dragging { z-index: 5; }
+.board-item.dragging .board-card-inner { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55); }
+.drag-grip { touch-action: none; }
+/* Resize handle in the bottom-right corner of each card. */
+.board-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+  z-index: 4;
+  touch-action: none;
+}
+.board-resize::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+}

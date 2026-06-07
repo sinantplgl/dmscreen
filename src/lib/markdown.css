@@ -1,0 +1,52 @@
+/* Rendered-markdown styling for the <Markdown> component. Theme-agnostic:
+   text inherits the surrounding color so it works on both the light parchment
+   (Reference / Session Notes) and the dark chrome (Session Tracker node bodies). */
+.markdown {
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.markdown p {
+  margin: 4px 0;
+}
+.markdown p:first-child {
+  margin-top: 0;
+}
+.markdown .md-h1,
+.markdown .md-h2,
+.markdown .md-h3 {
+  font-family: 'Cinzel', 'Libre Baskerville', serif;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 8px 0 3px;
+  color: inherit;
+}
+.markdown .md-h1 { font-size: 16px; }
+.markdown .md-h2 { font-size: 14px; }
+.markdown .md-h3 { font-size: 12.5px; letter-spacing: 0.5px; }
+.markdown ul,
+.markdown ol { margin: 3px 0; padding-left: 20px; }
+.markdown li { margin: 1px 0; }
+.markdown code {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: rgba(127, 127, 127, 0.18);
+  border: 1px solid rgba(127, 127, 127, 0.28);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.markdown blockquote {
+  margin: 5px 0;
+  padding: 1px 0 1px 9px;
+  border-left: 3px solid var(--accent);
+  font-style: italic;
+}
+.markdown a { color: var(--accent); text-decoration: underline; }
+.markdown strong { font-weight: 700; }
+.markdown em { font-style: italic; }
+
+/* On the parchment book look, headings/links take the deep red accent. */
+.parchment .markdown .md-h1,
+.parchment .markdown .md-h2,
+.parchment .markdown .md-h3 { color: #58180d; }
+.parchment .markdown a { color: #7a200d; }

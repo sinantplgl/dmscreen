@@ -1,0 +1,31 @@
+# dependencies
+node_modules
+
+# build output
+dist
+dist-ssr
+*.local
+
+# TypeScript incremental build info (tsc -b)
+*.tsbuildinfo
+
+# Playwright (headless-browser provider) artifacts & browser cache
+test-results
+playwright-report
+playwright/.cache
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# logs & caches
+*.log
+.cache
+node_modules/.tmp
+
+# editors / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db

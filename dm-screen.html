@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DM Screen</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d0c0a;
+    --surface:  #151310;
+    --card:     #1c1916;
+    --border:   #2e2820;
+    --accent:   #c8922a;
+    --accent2:  #8b3a3a;
+    --gold:     #d4a847;
+    --text:     #e8dfd0;
+    --muted:    #7a6e60;
+    --green:    #4a7c59;
+    --red:      #8b3a3a;
+    --blue:     #3a5f8b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 15px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .session-info {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .session-info span { color: var(--text); font-weight: 600; }
+  .session-badge {
+    background: var(--accent2);
+    color: var(--text);
+    padding: 2px 10px;
+    border-radius: 2px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  /* ── NAV TABS ── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 2px;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .2s, border-color .2s;
+    text-transform: uppercase;
+  }
+  nav button:hover { color: var(--text); }
+  nav button.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    flex: 1;
+    overflow: hidden;
+  }
+  .panel {
+    background: var(--bg);
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .panel::-webkit-scrollbar { width: 4px; }
+  .panel::-webkit-scrollbar-track { background: transparent; }
+  .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+  }
+  .card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title .icon { font-size: 14px; }
+
+  /* ── COMBAT TRACKER ── */
+  .combatant {
+    display: grid;
+    grid-template-columns: 24px 1fr 56px 56px auto;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+    transition: background .15s;
+  }
+  .combatant:hover { background: var(--surface); }
+  .combatant.active-turn {
+    background: #1e1a10;
+    border-color: var(--accent);
+  }
+  .init-badge {
+    width: 24px; height: 24px;
+    background: var(--accent2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+  .combatant.active-turn .init-badge { background: var(--accent); }
+  .c-name { font-weight: 600; font-size: 14px; }
+  .c-type { font-size: 11px; color: var(--muted); }
+  .hp-bar-wrap { position: relative; }
+  .hp-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .hp-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .3s;
+  }
+  .hp-fill.high { background: var(--green); }
+  .hp-fill.mid  { background: var(--accent); }
+  .hp-fill.low  { background: var(--red); }
+  .hp-text { font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; }
+  .hp-text strong { color: var(--text); }
+  .ac-badge {
+    background: var(--blue);
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .condition-tag {
+    display: inline-block;
+    background: #3a1f1f;
+    color: #d47a7a;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin: 2px 2px 0 0;
+    letter-spacing: .5px;
+  }
+  .round-counter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .round-counter strong { color: var(--gold); font-size: 18px; }
+
+  /* ── PLAYER CARDS ── */
+  .player-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+  }
+  .player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .player-name { font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold); }
+  .player-class { font-size: 12px; color: var(--muted); font-style: italic; }
+  .player-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .stat-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    text-align: center;
+    padding: 4px 2px;
+  }
+  .stat-box .val { font-family: 'Cinzel', serif; font-size: 14px; color: var(--text); font-weight: 700; }
+  .stat-box .lbl { font-size: 9px; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; }
+
+  /* ── CREATURE CARD ── */
+  .creature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+  }
+  .creature-name {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .creature-meta { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 8px; }
+  .ability-scores {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3px;
+    margin: 8px 0;
+  }
+  .abil-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    text-align: center;
+    padding: 3px 2px;
+  }
+  .abil-box .score { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; }
+  .abil-box .mod { font-size: 10px; color: var(--muted); }
+  .abil-box .lbl { font-size: 9px; color: var(--muted); letter-spacing: .5px; }
+  .trait { margin-top: 6px; font-size: 13px; }
+  .trait strong { color: var(--accent); font-style: italic; }
+  .divider {
+    border: none;
+    border-top: 1px solid var(--accent2);
+    margin: 6px 0;
+    opacity: .4;
+  }
+
+  /* ── NOTES ── */
+  .notes-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .notes-tab {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .notes-tab.active { background: var(--card); color: var(--gold); border-color: var(--accent); }
+  textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Crimson Pro', serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 10px;
+    resize: none;
+    outline: none;
+    transition: border-color .2s;
+  }
+  textarea:focus { border-color: var(--accent); }
+  .notes-area { flex: 1; min-height: 160px; }
+
+  /* ── REFERENCE TABLE ── */
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ref-table th {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td { padding: 5px 8px; border-bottom: 1px solid #1c1916; }
+  .ref-table tr:hover td { background: var(--surface); }
+
+  /* ── XP TRACKER ── */
+  .xp-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 6px 0;
+  }
+  .xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 4px;
+    width: 62%;
+    transition: width .5s;
+  }
+  .xp-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+  .btn:hover { background: var(--card); border-color: var(--accent); color: var(--gold); }
+  .btn-accent { background: var(--accent2); border-color: var(--accent2); }
+  .btn-accent:hover { background: #a04040; }
+
+  /* ── INITIATIVE ADD ── */
+  .add-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  input[type="text"], input[type="number"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Crimson Pro', serif;
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    outline: none;
+    width: 100%;
+    transition: border-color .2s;
+  }
+  input:focus { border-color: var(--accent); }
+
+  /* ── MISC ── */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    letter-spacing: .5px;
+  }
+  .tag-green { background: #1a3024; color: #6dbf8a; }
+  .tag-gold  { background: #2a1f06; color: var(--gold); }
+  .tag-red   { background: #3a1414; color: #d47070; }
+
+  .section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .flex-row { display: flex; gap: 8px; align-items: center; }
+  .flex-end { justify-content: flex-end; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚔ DM Screen</h1>
+  <div style="width:1px;height:24px;background:var(--border)"></div>
+  <div style="font-size:12px;color:var(--muted)">Campaign: <span style="color:var(--text);font-weight:600">Shadows of Valdremor</span></div>
+  <div class="session-badge">Session 7</div>
+  <div class="session-info">
+    <span id="clock">--:--</span>
+    <span style="color:var(--muted)">|</span>
+    Location: <span>The Sunken Vault</span>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="switchTab('combat')">⚔ Combat</button>
+  <button onclick="switchTab('players')">🛡 Players</button>
+  <button onclick="switchTab('bestiary')">🐉 Bestiary</button>
+  <button onclick="switchTab('notes')">📜 Notes</button>
+  <button onclick="switchTab('reference')">📖 Reference</button>
+</nav>
+
+<main id="main-content">
+  <!-- panels injected by JS -->
+</main>
+
+<script>
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+updateClock(); setInterval(updateClock, 10000);
+
+// ── DATA ──
+const state = {
+  round: 3,
+  combatants: [
+    { id:1, name:'Thalindra Ashveil', type:'Player', init:20, hp:34, maxHp:40, ac:16, conditions:[], isPlayer:true },
+    { id:2, name:'Borric Stonefist',  type:'Player', init:18, hp:22, maxHp:52, ac:18, conditions:['Prone'], isPlayer:true },
+    { id:3, name:'Shadow Wraith',      type:'Undead', init:15, hp:18, maxHp:45, ac:13, conditions:['Frightened'], isPlayer:false },
+    { id:4, name:'Gorgath the Defiler',type:'Monster',init:12, hp:65, maxHp:120,ac:17, conditions:[], isPlayer:false },
+    { id:5, name:'Vault Skeleton ×3',  type:'Undead', init:8,  hp:24, maxHp:39, ac:13, conditions:[], isPlayer:false },
+  ],
+  activeTurn: 0,
+  players: [
+    { name:'Thalindra Ashveil', cls:'Ranger 7',   hp:34, maxHp:40, ac:16, pp:16, slots:'3/4/2' },
+    { name:'Borric Stonefist',  cls:'Fighter 7',  hp:22, maxHp:52, ac:18, pp:13, slots:'—' },
+    { name:'Seraphine Voss',    cls:'Wizard 6',   hp:28, maxHp:35, ac:13, pp:11, slots:'4/3/3/1' },
+    { name:'Durin Copperpot',   cls:'Rogue 7',    hp:38, maxHp:44, ac:15, pp:17, slots:'—' },
+  ],
+  notes: {
+    session: `- Party descends into vault level 2\n- Found the obsidian seal — cracked\n- Gorgath mentioned "the sleeper stirs"\n- TODO: roll wandering monster at top of hour`,
+    npcs: `Mira the Keeper — nervous, knows more than she lets on\nGorgath — servant of the Pale Court, not the main villain\nThe Archivist — hasn't appeared yet, mentioned in letter`,
+    loot: `Vault chest (locked, CR 4)\n+1 Shortsword on skeleton captain\nScroll of Speak with Dead\n~400 gp scattered`
+  },
+  activeNote: 'session'
+};
+
+// ── HELPERS ──
+function hpClass(hp, max) {
+  const p = hp/max;
+  if (p > .6) return 'high';
+  if (p > .3) return 'mid';
+  return 'low';
+}
+function mod(score) {
+  const m = Math.floor((score-10)/2);
+  return (m >= 0 ? '+' : '') + m;
+}
+
+// ── RENDER PANELS ──
+function renderCombat() {
+  return `
+  <div class="panel">
+    <div class="card">
+      <div class="card-title"><span>⚔ Initiative Order</span></div>
+      <div class="round-counter">
+        <span>Round</span>
+        <strong>${state.round}</strong>
+        <div class="flex-row">
+          <button class="btn" onclick="prevTurn()">◀ Prev</button>
+          <button class="btn btn-accent" onclick="nextTurn()">Next ▶</button>
+        </div>
+      </div>
+      ${state.combatants.map((c,i) => `
+        <div class="combatant ${i===state.activeTurn?'active-turn':''}">
+          <div class="init-badge">${c.init}</div>
+          <div>
+            <div class="c-name">${c.name}</div>
+            <div class="c-type">${c.type}</div>
+            ${c.conditions.map(cd=>`<span class="condition-tag">${cd}</span>`).join('')}
+            <div class="hp-bar"><div class="hp-fill ${hpClass(c.hp,c.maxHp)}" style="width:${Math.max(0,c.hp/c.maxHp*100)}%"></div></div>
+          </div>
+          <div class="hp-text"><strong>${c.hp}</strong>/${c.maxHp}</div>
+          <div class="ac-badge">AC ${c.ac}</div>
+          <div class="flex-row" style="gap:4px">
+            <button class="btn" onclick="adjustHp(${c.id},-5)" title="Deal 5 dmg">−5</button>
+            <button class="btn" onclick="adjustHp(${c.id},5)"  title="Heal 5">+5</button>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Add Combatant</div>
+      <div class="add-row">
+        <input type="text"   id="new-name" placeholder="Name">
+        <input type="number" id="new-init" placeholder="Init" min="1" max="30">
+        <input type="number" id="new-hp"   placeholder="Max HP">
+        <button class="btn btn-accent" onclick="addCombatant()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <div class="card-title">🎲 Dice Roller</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        ${['d4','d6','d8','d10','d12','d20','d100'].map(d=>`
+          <button class="btn" onclick="rollDie(${d.slice(1)})" style="min-width:42px">${d}</button>
+        `).join('')}
+      </div>
+      <div id="roll-history" style="font-family:'Cinzel',serif;font-size:13px;color:var(--muted);min-height:60px;max-height:120px;overflow-y:auto">
+        <em style="font-style:italic;font-size:12px">No rolls yet...</em>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📜 Session Notes (Quick)</div>
+      <textarea class="notes-area" style="min-height:120px" placeholder="Quick session notes..."
+        onchange="state.notes.session=this.value">${state.notes.session}</textarea>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚡ Conditions Quick Ref</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${['Blinded','Charmed','Deafened','Exhaustion','Frightened','Grappled','Incapacitated','Invisible','Paralyzed','Petrified','Poisoned','Prone','Restrained','Stunned','Unconscious'].map(c=>`
+          <span class="tag tag-red" style="cursor:default;font-size:11px;padding:2px 7px">${c}</span>
+        `).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <div class="card-title">🗺 Session Info</div>
+      <div style="margin-bottom:8px">
+        <div class="section-label">Location</div>
+        <div style="font-size:15px;font-weight:600">The Sunken Vault — Level 2</div>
+        <div style="font-size:12px;color:var(--muted);font-style:italic">Dark, flooded, ancient dwarven construction</div>
+      </div>
+      <hr class="divider">
+      <div class="section-label">Session XP</div>
+      <div class="xp-bar"><div class="xp-fill"></div></div>
+      <div class="xp-label"><span>3,100 / 5,000 xp</span><span>Level 7 → 8</span></div>
+      <hr class="divider">
+      <div class="section-label">Upcoming</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text)">
+        ⟢ Gorgath second phase at 60 HP<br>
+        ⟢ Vault door seals after 10 rounds<br>
+        ⟢ Archivist arrives if bell rings
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💀 Monster: Gorgath the Defiler</div>
+      <div style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:6px">Large Undead, Chaotic Evil · CR 9</div>
+      <div class="flex-row" style="margin-bottom:6px">
+        <span class="tag tag-red">AC 17 (natural)</span>
+        <span class="tag tag-gold">Speed 40 ft</span>
+        <span class="tag tag-red">65 / 120 HP</span>
+      </div>
+      <div class="ability-scores">
+        ${[['STR','22','+6'],['DEX','10','+0'],['CON','20','+5'],['INT','14','+2'],['WIS','12','+1'],['CHA','16','+3']].map(([l,s,m])=>`
+          <div class="abil-box">
+            <div class="score">${s}</div>
+            <div class="mod">${m}</div>
+            <div class="lbl">${l}</div>
+          </div>`).join('')}
+      </div>
+      <hr class="divider">
+      <div class="trait"><strong>Multiattack.</strong> Gorgath makes two Bone Cleave attacks.</div>
+      <div class="trait"><strong>Bone Cleave.</strong> +9 to hit, 2d8+6 slashing + 1d6 necrotic.</div>
+      <div class="trait"><strong>Death Shriek (Recharge 5–6).</strong> 30-ft cone, DC 16 Con, 5d8 necrotic.</div>
+      <div class="trait"><strong>Undead Resilience.</strong> Immune to poison, exhaustion; resistant to necrotic.</div>
+    </div>
+  </div>`;
+}
+
+function renderPlayers() {
+  return `
+  <div class="panel" style="grid-column:1/-1">
+    <div class="card">
+      <div class="card-title">🛡 Player Roster</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        ${state.players.map(p => `
+          <div class="player-card">
+            <div class="player-header">
+              <div>
+                <div class="player-name">${p.name}</div>
+                <div class="player-class">${p.cls}</div>
+              </div>
+              <span class="tag tag-green">Active</span>
+            </div>
+            <div class="hp-bar" style="height:8px"><div class="hp-fill ${hpClass(p.hp,p.maxHp)}" style="width:${p.hp/p.maxHp*100}%"></div></div>
+            <div class="xp-label" style="margin-bottom:6px"><span>HP ${p.hp}/${p.maxHp}</span><span>AC ${p.ac}</span></div>
+            <div class="player-stats">
+              <div class="stat-box"><div class="val">${p.hp}</div><div class="lbl">HP</div></div>
+              <div class="stat-box"><div class="val">${p.ac}</div><div class="lbl">AC</div></div>
+              <div class="stat-box"><div class="val">${p.pp}</div><div class="lbl">Pass. Perc</div></div>
+              <div class="stat-box"><div class="val" style="font-size:10px">${p.slots}</div><div class="lbl">Slots</div></div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderBestiary() {
+  const creatures = [
+    { name:'Shadow Wraith', meta:'Medium Undead · CR 5', ac:13, hp:45, spd:40, str:6,dex:24,con:12,int:11,wis:17,cha:19,
+      traits:['Incorporeal Movement — can move through creatures/objects','Sunlight Weakness — disadvantage in sunlight'],
+      actions:['Life Drain: +6 to hit, 3d6+3 necrotic, DC 14 Con or max HP reduced'] },
+    { name:'Vault Skeleton', meta:'Medium Undead · CR 1/4', ac:13, hp:13, spd:30, str:10,dex:14,con:15,int:6,wis:8,cha:5,
+      traits:['Immune to poison, exhaustion'],
+      actions:['Shortsword: +4 to hit, 1d6+2 piercing','Shortbow: +4 to hit, 80/320 ft, 1d6+2 piercing'] },
+  ];
+  return `
+  <div class="panel" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start">
+    ${creatures.map(c=>`
+      <div class="creature-card">
+        <div class="creature-name">${c.name}</div>
+        <div class="creature-meta">${c.meta}</div>
+        <div class="flex-row" style="gap:6px;margin-bottom:8px">
+          <span class="tag tag-red">AC ${c.ac}</span>
+          <span class="tag tag-gold">HP ${c.hp}</span>
+          <span class="tag tag-green">Spd ${c.spd} ft</span>
+        </div>
+        <div class="ability-scores">
+          ${[['STR',c.str],['DEX',c.dex],['CON',c.con],['INT',c.int],['WIS',c.wis],['CHA',c.cha]].map(([l,s])=>`
+            <div class="abil-box">
+              <div class="score">${s}</div>
+              <div class="mod">${mod(s)}</div>
+              <div class="lbl">${l}</div>
+            </div>`).join('')}
+        </div>
+        <hr class="divider">
+        ${c.traits.map(t=>`<div class="trait" style="margin-bottom:4px"><strong>Trait.</strong> ${t}</div>`).join('')}
+        <hr class="divider">
+        ${c.actions.map(a=>`<div class="trait" style="margin-bottom:4px"><strong>Action.</strong> ${a}</div>`).join('')}
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderNotes() {
+  const tabs = [{key:'session',label:'Session'},{key:'npcs',label:'NPCs'},{key:'loot',label:'Loot'}];
+  return `
+  <div class="panel" style="grid-column:1/-1">
+    <div class="card" style="flex:1;display:flex;flex-direction:column">
+      <div class="card-title">📜 Notes</div>
+      <div class="notes-tabs">
+        ${tabs.map(t=>`<button class="notes-tab ${state.activeNote===t.key?'active':''}" onclick="switchNote('${t.key}')">${t.label}</button>`).join('')}
+      </div>
+      <textarea class="notes-area" style="flex:1;min-height:400px"
+        onchange="state.notes['${state.activeNote}']=this.value">${state.notes[state.activeNote]}</textarea>
+    </div>
+  </div>`;
+}
+
+function renderReference() {
+  const conditions = [
+    ['Blinded','Auto-fail checks requiring sight; attacks vs. blinded have adv; blinded attacks have disadv'],
+    ['Charmed','Can\'t attack charmer; charmer has adv on social checks vs. target'],
+    ['Frightened','Disadv on checks/attacks while source in sight; can\'t willingly move closer to source'],
+    ['Grappled','Speed 0; ends if grappler incapacitated or target removed from reach'],
+    ['Paralyzed','Incapacitated, can\'t move/speak; auto-fail Str/Dex saves; attacks within 5 ft are crits'],
+    ['Poisoned','Disadv on attack rolls and ability checks'],
+    ['Prone','Disadv on attacks; melee attacks within 5 ft have adv; ranged attacks have disadv'],
+    ['Restrained','Speed 0; disadv on attacks and Dex saves; attacks against have adv'],
+    ['Stunned','Incapacitated; can\'t move; auto-fail Str/Dex saves; attacks against have adv'],
+    ['Unconscious','Incapacitated, drops; auto-fail Str/Dex; attacks have adv; hits from 5 ft are crits'],
+  ];
+  const dcs = [
+    ['Very Easy','5'],['Easy','10'],['Medium','15'],['Hard','20'],['Very Hard','25'],['Nearly Impossible','30']
+  ];
+  return `
+  <div class="panel">
+    <div class="card">
+      <div class="card-title">📖 Conditions</div>
+      <table class="ref-table">
+        <tr><th>Condition</th><th>Effect</th></tr>
+        ${conditions.map(([c,e])=>`<tr><td><span class="tag tag-red">${c}</span></td><td style="color:var(--muted)">${e}</td></tr>`).join('')}
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="card">
+      <div class="card-title">🎯 Difficulty Classes</div>
+      <table class="ref-table">
+        <tr><th>Difficulty</th><th>DC</th></tr>
+        ${dcs.map(([d,v])=>`<tr><td>${d}</td><td style="font-family:'Cinzel',serif;color:var(--gold);font-size:14px">${v}</td></tr>`).join('')}
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">💨 Cover & Vision</div>
+      <table class="ref-table">
+        <tr><th>Type</th><th>Bonus</th></tr>
+        <tr><td>Half cover</td><td style="color:var(--gold)">+2 AC & Dex saves</td></tr>
+        <tr><td>Three-quarter cover</td><td style="color:var(--gold)">+5 AC & Dex saves</td></tr>
+        <tr><td>Full cover</td><td style="color:var(--accent)">Can't be targeted</td></tr>
+        <tr><td>Lightly obscured</td><td style="color:var(--muted)">Disadv on Perception</td></tr>
+        <tr><td>Heavily obscured</td><td style="color:var(--muted)">Effectively blinded</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">⚔ Common Actions</div>
+      <table class="ref-table">
+        <tr><th>Action</th><th>Notes</th></tr>
+        <tr><td>Attack</td><td style="color:var(--muted)">One or more attacks</td></tr>
+        <tr><td>Dash</td><td style="color:var(--muted)">+Speed movement</td></tr>
+        <tr><td>Disengage</td><td style="color:var(--muted)">No opportunity attacks</td></tr>
+        <tr><td>Dodge</td><td style="color:var(--muted)">Attacks vs. you have disadv; adv on Dex saves</td></tr>
+        <tr><td>Help</td><td style="color:var(--muted)">Give ally adv on next check/attack</td></tr>
+        <tr><td>Hide</td><td style="color:var(--muted)">Stealth check vs. passive perception</td></tr>
+        <tr><td>Ready</td><td style="color:var(--muted)">Set trigger + reaction</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="card">
+      <div class="card-title">🎲 Encounter XP Thresholds (Level 7)</div>
+      <table class="ref-table">
+        <tr><th>Difficulty</th><th>Per Player XP</th><th>Party of 4</th></tr>
+        <tr><td><span class="tag tag-green">Easy</span></td><td>300</td><td>1,200</td></tr>
+        <tr><td><span class="tag tag-gold">Medium</span></td><td>750</td><td>3,000</td></tr>
+        <tr><td><span class="tag tag-red">Hard</span></td><td>1,100</td><td>4,400</td></tr>
+        <tr><td><span class="tag tag-red" style="background:#4a1414">Deadly</span></td><td>1,700</td><td>6,800</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🔮 Concentration</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--muted)">
+        Taking damage → DC 10 or ½ damage dealt (higher) Con save<br>
+        Incapacitated → concentration lost<br>
+        Dying → concentration lost<br>
+        <em style="color:var(--text)">War Caster feat: adv on concentration saves</em>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── ACTIONS ──
+function switchTab(tab) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const mc = document.getElementById('main-content');
+  mc.style.gridTemplateColumns = (tab === 'players' || tab === 'bestiary' || tab === 'notes') ? '1fr' : '1fr 1fr 1fr';
+  if (tab === 'players')    { mc.style.gridTemplateColumns='1fr'; mc.innerHTML = renderPlayers(); }
+  else if (tab === 'bestiary') { mc.style.gridTemplateColumns='1fr'; mc.innerHTML = renderBestiary(); }
+  else if (tab === 'notes')    { mc.style.gridTemplateColumns='1fr'; mc.innerHTML = renderNotes(); }
+  else if (tab === 'reference') { mc.style.gridTemplateColumns='1fr 1fr 1fr'; mc.innerHTML = renderReference(); }
+  else { mc.style.gridTemplateColumns='1fr 1fr 1fr'; mc.innerHTML = renderCombat(); }
+}
+
+function nextTurn() {
+  state.activeTurn = (state.activeTurn + 1) % state.combatants.length;
+  if (state.activeTurn === 0) state.round++;
+  refresh();
+}
+function prevTurn() {
+  state.activeTurn = (state.activeTurn - 1 + state.combatants.length) % state.combatants.length;
+  refresh();
+}
+function adjustHp(id, delta) {
+  const c = state.combatants.find(x=>x.id===id);
+  if (c) c.hp = Math.max(0, Math.min(c.maxHp, c.hp + delta));
+  refresh();
+}
+function addCombatant() {
+  const name = document.getElementById('new-name').value.trim();
+  const init = parseInt(document.getElementById('new-init').value) || 10;
+  const hp   = parseInt(document.getElementById('new-hp').value)   || 10;
+  if (!name) return;
+  state.combatants.push({ id: Date.now(), name, type:'Custom', init, hp, maxHp:hp, ac:10, conditions:[], isPlayer:false });
+  state.combatants.sort((a,b)=>b.init-a.init);
+  refresh();
+}
+function switchNote(key) {
+  state.activeNote = key;
+  document.getElementById('main-content').innerHTML = renderNotes();
+}
+
+let rollHistory = [];
+function rollDie(sides) {
+  const result = Math.floor(Math.random() * sides) + 1;
+  rollHistory.unshift(`d${sides} → <strong style="color:${result===sides?'var(--gold)':result===1?'var(--red)':'var(--text)'}">${result}</strong>`);
+  if (rollHistory.length > 6) rollHistory.pop();
+  const el = document.getElementById('roll-history');
+  if (el) el.innerHTML = rollHistory.map(r=>`<div style="margin-bottom:2px">${r}</div>`).join('');
+}
+
+function refresh() {
+  const mc = document.getElementById('main-content');
+  const active = document.querySelector('nav button.active');
+  const tab = active ? active.textContent.trim().toLowerCase() : 'combat';
+  if (tab.includes('combat') || tab.includes('⚔')) mc.innerHTML = renderCombat();
+}
+
+// ── INIT ──
+document.getElementById('main-content').innerHTML = renderCombat();
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   PARCHMENT — authentic D&D 5e stat block + book tables.
+   Adapted from the well-known open-source stat-block recreation
+   (Solbera / statblock5e). Everything is scoped under `.parchment` so it never
+   bleeds into the dark chrome UI.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* 2024 (5.5e) stat block: pale parchment, deep-red accents, NO orange bars. */
+.parchment {
+  --p-red: #7a200d; /* canonical D&D stat-block red — name, labels, ability names */
+  --p-rule: #922610; /* section rules + headings */
+  --p-band: #f0dccf; /* the pale rose band behind the 2024 ability block */
+  --p-band-edge: #e3c3b3; /* subtle border for that band */
+  --p-text: #1d1207;
+  /* 2024 ability-table tints. Left group = STR/DEX/CON, right = INT/WIS/CHA. */
+  --ab-name: #EDE6D9; /* left: name + score */
+  --ab-mod: #DED4CC; /* left: Mod + Save */
+  --ab-name-2: #D8DAD1; /* right: name + score — REPLACE */
+  --ab-mod-2: #D0CACA; /* right: Mod + Save — REPLACE */
+  background: #fdf1dc;
+  color: var(--p-text);
+  font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+  font-size: 13.5px;
+  line-height: 1.4;
+  border: 1px solid #d9c9a6;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  padding: 0;
+}
+
+.statblock {
+  padding: 11px 14px 13px;
+}
+
+.statblock .creature-name {
+  font-family: 'Cinzel', 'Libre Baskerville', serif;
+  color: var(--p-red);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: 0.3px;
+  margin: 0;
+}
+.statblock .type-line {
+  font-style: italic;
+  font-size: 12.5px;
+  margin: 1px 0 6px;
+  color: #3a2a18;
+}
+
+/* 2024 separators are thin solid red rules, not tapered triangles. */
+.tapered-rule {
+  display: block;
+  width: 100%;
+  height: 0;
+  margin: 7px 0;
+  border: none;
+  border-top: 1.5px solid var(--p-rule);
+}
+
+/* Property lines: AC / Initiative / HP / Speed. */
+.statblock .prop-line {
+  color: var(--p-text);
+  line-height: 1.5;
+  margin: 1px 0;
+}
+.statblock .prop-line .label {
+  font-weight: 700;
+  color: var(--p-red);
+}
+.statblock .prop-line .value {
+  color: var(--p-text);
+  font-weight: 400;
+}
+/* Artwork backdrop: anchored left behind the stat header, faded out to the
+   right so the stats stay readable. The image sits below the content layer. */
+.statblock .stat-main {
+  position: relative;
+}
+.statblock .stat-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  /* Image sits on the right and fades out toward the left (right → left). The
+     fade lives on this wrapper so flipping the <img> never moves it. */
+  -webkit-mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.55) 38%, transparent 72%);
+  mask-image: linear-gradient(to left, #000 0%, rgba(0, 0, 0, 0.55) 38%, transparent 72%);
+}
+.statblock .stat-backdrop .backdrop-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  opacity: 0.6;
+}
+.statblock .stat-backdrop .backdrop-img.flip {
+  transform: scaleX(-1);
+}
+.statblock .stat-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* 2024 puts AC and Initiative together on the first defensive line. */
+.statblock .def-line {
+  display: flex;
+  gap: 26px;
+  line-height: 1.5;
+  margin: 1px 0;
+}
+.statblock .def-line .label {
+  font-weight: 700;
+  color: var(--p-red);
+}
+
+/* 2024 ability block: two side-by-side groups (STR/DEX/CON · INT/WIS/CHA),
+   each with Score / Mod / Save columns, sitting on a pale band. */
+.statblock .ability-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 14px;
+  margin: 6px 0;
+}
+.statblock .ability-col {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 12.5px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.statblock .ability-col th {
+  color: var(--p-red);
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.5px;
+  font-size: 10px;
+  text-align: right;
+  padding: 0 7px 1px;
+}
+.statblock .ability-col td {
+  padding: 3px 7px;
+  line-height: 1.4;
+  color: var(--p-text);
+}
+.statblock .ability-col td.ab {
+  font-weight: 700;
+  text-align: left;
+}
+.statblock .ability-col td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* 2024 column-group fills. Left group (STR/DEX/CON) and right group
+   (INT/WIS/CHA) each get their own name+score / Mod+Save pair of tints. */
+/* ~80% opaque so the artwork backdrop bleeds subtly through the table. */
+.statblock .ability-col.col-1 td.grpA {
+  background: color-mix(in srgb, var(--ab-name) 80%, transparent);
+}
+.statblock .ability-col.col-1 td.grpB {
+  background: color-mix(in srgb, var(--ab-mod) 80%, transparent);
+}
+.statblock .ability-col.col-2 td.grpA {
+  background: color-mix(in srgb, var(--ab-name-2) 80%, transparent);
+}
+.statblock .ability-col.col-2 td.grpB {
+  background: color-mix(in srgb, var(--ab-mod-2) 80%, transparent);
+}
+
+/* 2024 footer lines (Habitat / Treasure) read lighter than the main block. */
+.statblock .footer-list {
+  font-style: italic;
+}
+
+/* Secondary property lines (skills, senses, languages, CR…). */
+.statblock .prop-list {
+  color: var(--p-text);
+  line-height: 1.5;
+}
+.statblock .prop-list .entry {
+  margin: 1px 0;
+}
+.statblock .prop-list .label {
+  font-weight: 700;
+  color: var(--p-red);
+}
+.statblock .prop-list .value {
+  color: var(--p-text);
+}
+
+/* 2024 section headings: bold red caps over a thin full-width rule. */
+.statblock .section-heading {
+  font-family: 'Cinzel', 'Libre Baskerville', serif;
+  color: var(--p-red);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  border-bottom: 1.5px solid var(--p-rule);
+  margin: 12px 0 5px;
+  padding-bottom: 2px;
+}
+
+/* Trait / action entries — 2024 uses bold (not italic) lead-in names. */
+.statblock .entry {
+  margin: 5px 0;
+  line-height: 1.46;
+}
+.statblock .entry .entry-name {
+  font-weight: 700;
+  font-style: italic;
+  color: var(--p-text);
+}
+
+/* Editable fields inside a parchment block keep the book look. */
+.parchment input,
+.parchment textarea {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #cdbf9c;
+  color: #1d1207;
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: 2px;
+  padding: 2px 5px;
+  width: 100%;
+}
+.parchment input:focus,
+.parchment textarea:focus {
+  outline: none;
+  border-color: #922610;
+  background: #fff;
+}
+
+/* ── BOOK TABLES (reference) ── */
+.book-table {
+  padding: 10px 14px 12px;
+  border-top: 4px solid #e69a28;
+  /* border-bottom: 4px solid #e69a28; */
+}
+.book-table .table-title {
+  font-family: 'Cinzel', serif;
+  color: #58180d;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.book-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.book-table th {
+  color: #58180d;
+  text-align: left;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-bottom: 1px solid #922610;
+}
+.book-table td {
+  padding: 4px 8px;
+  vertical-align: top;
+  color: #1d1207;
+}
+/* The classic alternating tan row shading. */
+.book-table tbody tr:nth-child(odd) {
+  background: #e0d5b8;
+}
+.book-table tbody tr:nth-child(even) {
+  background: transparent;
+}
+.book-table .row-tools {
+  display: flex;
+  gap: 4px;
+}
+.book-table .row-tools button,
+.book-table .table-title button {
+  background: rgba(146, 38, 16, 0.12);
+  border: 1px solid #cdbf9c;
+  color: #58180d;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.book-table .row-tools button:hover,
+.book-table .table-title button:hover {
+  background: rgba(146, 38, 16, 0.25);
+}
+
+/* ── Reference card header: grip + title + span control + tools ── */
+.book-table .ref-head {
+  justify-content: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.book-table .ref-head .spacer {
+  flex: 1;
+}
+.book-table .ref-title-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.book-table .drag-grip {
+  cursor: grab;
+  color: #922610;
+  font-size: 14px;
+  line-height: 1;
+  user-select: none;
+  padding: 0 2px;
+}
+.book-table .drag-grip:active {
+  cursor: grabbing;
+}
+/* ── Reference notes ── (rendered markdown now lives in src/lib/markdown.css) */
+.book-table .ref-note-edit {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+}
+
+/* ── Reference images ── */
+.book-table .ref-image {
+  margin: 0;
+}
+.book-table .ref-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid #cdbf9c;
+  border-radius: 3px;
+}
+.book-table .ref-image figcaption {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 11px;
+  font-style: italic;
+  color: #5a4630;
+}
+.book-table .ref-image-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.book-table .ref-empty {
+  color: #8a7a5c;
+  font-style: italic;
+  font-size: 12px;
+  padding: 4px 0;
+}

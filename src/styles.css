@@ -1,0 +1,400 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   DARK CHROME — palette, fonts and component styles for the DM Screen shell.
+   Ported & extended from the original dm-screen.html prototype.
+   (Authentic "book" styling for stat blocks + tables lives in parchment.css.)
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0d0c0a;
+  --surface: #151310;
+  --card: #1c1916;
+  --card2: #231f1a;
+  --border: #2e2820;
+  --accent: #c8922a;
+  --accent2: #8b3a3a;
+  --gold: #d4a847;
+  --text: #e8dfd0;
+  --muted: #7a6e60;
+  --green: #4a7c59;
+  --red: #8b3a3a;
+  --blue: #3a5f8b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 15px;
+  overflow: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+button { font-family: inherit; }
+
+/* ── HEADER ── */
+header.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+header.app-header h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: var(--gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.header-divider { width: 1px; height: 24px; background: var(--border); }
+.header-field { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.header-field input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--text);
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 1px 2px;
+  min-width: 60px;
+}
+.header-field input:hover { border-bottom-color: var(--border); }
+.header-field input:focus { outline: none; border-bottom-color: var(--accent); }
+.campaign-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: auto;
+  min-width: 130px;
+  max-width: 220px;
+  background-color: var(--card);
+  /* custom caret (accent chevron) so the native arrow doesn't break the theme */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23c8922a' d='M3.5 6h9L8 11z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 11px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 4px 26px 4px 9px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.campaign-select select:hover { border-color: var(--accent); }
+.campaign-select select:focus { outline: none; border-color: var(--accent); }
+/* The option list is OS-drawn; at least theme it where browsers honor it. */
+.campaign-select select option { background: var(--card); color: var(--text); }
+.campaign-select .icon-btn { font-size: 14px; padding: 2px 5px; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.clock { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ── TAB BAR ── */
+nav.tab-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 2px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  align-items: stretch;
+  overflow-x: auto;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  padding: 9px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-btn.drop-target { background: var(--card); border-bottom-color: var(--accent); }
+.tab-btn input {
+  background: var(--card);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 1px 4px;
+  width: 110px;
+}
+.tab-close {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+.tab-close:hover { color: var(--red); background: var(--card); }
+.tab-add {
+  background: none; border: none; color: var(--muted);
+  font-size: 16px; padding: 4px 12px; cursor: pointer;
+}
+.tab-add:hover { color: var(--gold); }
+
+/* ── MAIN / COLUMN GRID ── */
+main.workspace {
+  flex: 1;
+  display: flex;
+  background: var(--border);
+  overflow: hidden;
+  gap: 1px;
+}
+.column {
+  background: var(--bg);
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.column.drop-target { outline: 2px dashed var(--accent); outline-offset: -4px; }
+.column-splitter {
+  width: 5px;
+  background: var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.column-splitter:hover { background: var(--accent); }
+.column-tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.add-panel-wrap { position: relative; }
+.add-panel-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 170px;
+  padding: 4px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.6);
+}
+.add-panel-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.add-panel-menu button:hover { background: var(--surface); color: var(--gold); }
+
+.column.column-empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+/* ── PANEL FRAME ── */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel.dragging { opacity: .4; }
+.panel.drop-before { box-shadow: 0 -3px 0 var(--accent); }
+.panel.drop-after { box-shadow: 0 3px 0 var(--accent); }
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.panel-grip {
+  cursor: grab;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: -1px;
+  user-select: none;
+}
+.panel-grip:active { cursor: grabbing; }
+.panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.panel-actions { display: flex; gap: 2px; }
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  line-height: 1;
+}
+.icon-btn:hover { color: var(--gold); background: var(--card2); }
+.icon-btn.danger:hover { color: var(--red); }
+.panel-body { padding: 12px; overflow: auto; flex: 1; min-height: 0; }
+/* A panel with an explicit (resized) height shouldn't be squeezed by flex. */
+.panel.fixed-height { flex: 0 0 auto; }
+/* Vertical-only resize grip along the bottom edge of a panel. */
+.panel-resize {
+  height: 7px;
+  flex: 0 0 auto;
+  cursor: ns-resize;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  touch-action: none;
+}
+.panel-resize:hover { background: var(--accent); }
+
+/* ── GENERIC CONTROLS ── */
+.btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all .2s;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--card2); border-color: var(--accent); color: var(--gold); }
+.btn-accent { background: var(--accent2); border-color: var(--accent2); color: var(--text); }
+.btn-accent:hover { background: #a04040; color: var(--text); }
+.btn-sm { padding: 2px 7px; font-size: 9px; }
+/* Per-panel styles now live beside each panel (src/panels/<Name>/<Name>.css). */
+
+/* Bare `input` (not just specific types) so typeless inputs — e.g. the session
+   tree node titles — get the dark theme instead of the browser's black default. */
+input, textarea, select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Crimson Pro', serif;
+  font-size: 14px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  outline: none;
+  width: 100%;
+  transition: border-color .2s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+textarea { resize: vertical; line-height: 1.55; }
+label.field { display: block; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+label.field > span { display: block; margin-bottom: 2px; letter-spacing: .5px; text-transform: uppercase; font-size: 9px; }
+
+.section-label {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+.flex-row { display: flex; gap: 8px; align-items: center; }
+.flex-wrap { flex-wrap: wrap; }
+.spacer { flex: 1; }
+.muted { color: var(--muted); }
+.italic { font-style: italic; }
+.empty-hint { color: var(--muted); font-style: italic; font-size: 13px; text-align: center; padding: 8px; }
+
+/* tags */
+.tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 2px; letter-spacing: .5px; }
+.tag-green { background: #1a3024; color: #6dbf8a; }
+.tag-gold { background: #2a1f06; color: var(--gold); }
+.tag-red { background: #3a1414; color: #d47070; }
+.tag-blue { background: #16263a; color: #7ba6d4; }
+
+/* ── MODAL / DRAWER ── */
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,.7);
+  display: flex; align-items: stretch; justify-content: flex-end;
+}
+.drawer {
+  width: min(900px, 92vw);
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  box-shadow: -10px 0 40px rgba(0,0,0,.6);
+}
+.drawer-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.drawer-head h2 { font-family: 'Cinzel', serif; font-size: 16px; color: var(--gold); letter-spacing: 1px; }
+.drawer-body { flex: 1; overflow: auto; padding: 16px; }
+.drawer-iframe { width: 100%; height: 100%; border: none; background: #fff; border-radius: 4px; }
+
+.modal {
+  width: min(560px, 94vw);
+  max-height: 88vh; overflow: auto;
+  margin: auto;
+  background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+  padding: 18px;
+}
+.overlay.center { align-items: center; justify-content: center; }
+.modal h2 { font-family: 'Cinzel', serif; font-size: 15px; color: var(--gold); letter-spacing: 1px; margin-bottom: 12px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-grid .full { grid-column: 1 / -1; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+.search-input { margin-bottom: 10px; }
+

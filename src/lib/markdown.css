@@ -3,8 +3,9 @@
    (Reference / Session Notes) and the dark chrome (Session Tracker node bodies). */
 .markdown {
   color: inherit;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.55;
+  font-weight: lighter;
 }
 .markdown p {
   margin: 4px 0;

@@ -120,10 +120,24 @@ export interface Player {
   level: number
   abilities: Abilities
   maxHp: number
+  /** Current HP for the card's HP bar. Blank = treated as full (maxHp). */
+  currentHp?: number
   ac: number
-  /** Passive Perception. Optional: when set (e.g. imported from DDB) it overrides
-   *  the 10 + WIS-mod estimate the card would otherwise show. */
+  /** Walking speed line, e.g. "30 ft." Blank = "30 ft." on the card. */
+  speed?: string
+  /** Initiative bonus override, e.g. "+2". Blank = derived from the DEX modifier. */
+  initiative?: string
+  /** Proficiency bonus override. Blank = derived from level (2 + ⌊(level-1)/4⌋). */
+  profBonus?: number
+  /** Ability keys with a saving-throw proficiency; drives the card's save bonuses. */
+  saveProficiencies?: (keyof Abilities)[]
+  /** Passive Perception. Optional: when set (e.g. imported from DDB, or entered
+   *  manually) it overrides the 10 + WIS-mod estimate the card would otherwise show. */
   passivePerception?: number
+  /** Passive Investigation override. Blank = 10 + INT mod. */
+  passiveInvestigation?: number
+  /** Passive Insight override. Blank = 10 + WIS mod. */
+  passiveInsight?: number
   portraitUrl?: string
   /** Full D&D Beyond character page URL (preferred). */
   ddbUrl?: string

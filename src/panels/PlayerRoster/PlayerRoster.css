@@ -124,3 +124,7 @@
 .skill-bonus { font-family: 'Cinzel', serif; color: var(--text); }
 
 .sheet-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 10px; }
+
+/* ── EDIT MODAL: manual saving-throw toggles + passive overrides ── */
+.save-prof-row { display: flex; flex-wrap: wrap; gap: 7px 16px; margin-bottom: 10px; }
+.passive-edit { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }

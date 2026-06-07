@@ -48,6 +48,11 @@ export function parseSaves(saves?: string): Partial<Record<keyof Abilities, stri
   return out
 }
 
+/** Proficiency bonus for a character level (5e: 2 at 1–4, +1 every 4 levels). */
+export function profBonusForLevel(level: number): number {
+  return 2 + Math.floor((Math.max(1, level) - 1) / 4)
+}
+
 /** Proficiency bonus for a Challenge Rating (2024 stat blocks print this as "PB +N"). */
 export function proficiencyBonusForCr(cr: string): number {
   const token = (cr || '').trim().split(/[\s(]/)[0]

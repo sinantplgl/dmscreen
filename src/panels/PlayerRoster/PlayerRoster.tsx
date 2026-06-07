@@ -2,8 +2,17 @@ import { useState } from 'react'
 import './PlayerRoster.css'
 import type { ReactNode } from 'react'
 import { useStore } from '../../store/store'
-import { ABILITY_KEYS, ABILITY_LABELS, abilityMod, hpClass, parseDdbId } from '../../lib/dnd'
-import type { Abilities, CharacterSheet, Player } from '../../types'
+import {
+  ABILITY_KEYS,
+  ABILITY_LABELS,
+  abilityMod,
+  abilityModValue,
+  hpClass,
+  parseDdbId,
+  profBonusForLevel,
+} from '../../lib/dnd'
+import type { Abilities, AbilityStat, CharacterSheet, Player, SaveStat } from '../../types'
+import { Checkbox } from '../../components/Checkbox'
 import { SwordsIcon, WarningIcon } from '../../components/icons'
 
 const ABBRS = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as const
@@ -187,46 +196,47 @@ function SheetView({ sheet }: { sheet: CharacterSheet }) {
   )
 }
 
-// ── fallback for characters without a fetched DDB snapshot ──────────────────
-function ManualView({ player }: { player: Player }) {
-  return (
-    <>
-      <AbilityTiles
-        tiles={ABILITY_KEYS.map((k) => ({
-          ab: ABILITY_LABELS[k],
-          mod: abilityMod(player.abilities[k]),
-          score: player.abilities[k],
-        }))}
-      />
-      <div className="sheet-cols">
-        <div className="framed">
-          <div className="framed-h">Combat</div>
-          <div className="framed-body">
-            <div className="mini2x2">
-              <MiniStat label="AC" value={player.ac} />
-              <MiniStat label="Max HP" value={player.maxHp} />
-              <MiniStat
-                label="Pass. Per"
-                value={player.passivePerception ?? 10 + Math.floor((player.abilities.wis - 10) / 2)}
-              />
-              <MiniStat label="Level" value={player.level} />
-            </div>
-          </div>
-        </div>
-        <div className="framed">
-          <div className="framed-h">Status</div>
-          <div className="framed-body">
-            <div className="empty-hint" style={{ fontSize: 11, padding: 4 }}>
-              {ddbId(player) ? 'Linked — hit ⟳ to fetch.' : 'No DDB link.'}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="empty-hint" style={{ marginTop: 8 }}>
-        {ddbId(player) ? 'Not fetched yet — hit ⟳.' : 'No D&D Beyond link. Use ✎ to add one, or edit manually.'}
-      </div>
-    </>
-  )
+// ── derive a CharacterSheet-shaped view-model from the manual Player fields ──
+// so a character WITHOUT a fetched DDB snapshot renders through the exact same
+// SheetView. Anything the DM didn't enter is computed from abilities/level the
+// way 5e would (mods, prof bonus, save bonuses, passives); skills/senses/
+// conditions stay empty (DDB-only enrichments that simply don't show).
+function sheetFromPlayer(p: Player): CharacterSheet {
+  const prof = p.profBonus ?? profBonusForLevel(p.level)
+  const fmt = (n: number) => (n >= 0 ? '+' : '') + n
+
+  const abilities: Record<string, AbilityStat> = {}
+  const saves: Record<string, SaveStat> = {}
+  const profSet = new Set(p.saveProficiencies ?? [])
+  for (const k of ABILITY_KEYS) {
+    const label = ABILITY_LABELS[k]
+    const mod = abilityModValue(p.abilities[k])
+    abilities[label] = { score: p.abilities[k], mod: fmt(mod) }
+    const proficient = profSet.has(k)
+    saves[label] = { bonus: fmt(mod + (proficient ? prof : 0)), proficient }
+  }
+  const wisMod = abilityModValue(p.abilities.wis)
+  const intMod = abilityModValue(p.abilities.int)
+  return {
+    name: p.name,
+    summary: null,
+    avatarUrl: p.portraitUrl ?? null,
+    ac: p.ac,
+    hpCurrent: p.currentHp ?? p.maxHp,
+    hpMax: p.maxHp,
+    hpTemp: null,
+    speed: p.speed || '30 ft.',
+    initiative: p.initiative || abilityMod(p.abilities.dex),
+    profBonus: prof,
+    abilities,
+    saves,
+    skills: [],
+    senses: [],
+    conditions: [],
+    passivePerception: p.passivePerception ?? 10 + wisMod,
+    passiveInvestigation: p.passiveInvestigation ?? 10 + intMod,
+    passiveInsight: p.passiveInsight ?? 10 + wisMod,
+  }
 }
 
 function PlayerSheetCard({
@@ -248,6 +258,9 @@ function PlayerSheetCard({
 }) {
   const href = player.ddbUrl || (ddbId(player) ? `https://www.dndbeyond.com/characters/${ddbId(player)}` : undefined)
   const sheet = player.sheet
+  // One rendering path: a real DDB snapshot when present, otherwise a derived
+  // one from the manual fields. The card looks identical either way.
+  const view = sheet ?? sheetFromPlayer(player)
   return (
     <div className="sheet-card">
       <div className="sheet-head">
@@ -284,7 +297,15 @@ function PlayerSheetCard({
         </div>
       )}
 
-      {sheet ? <SheetView sheet={sheet} /> : <ManualView player={player} />}
+      <SheetView sheet={view} />
+
+      {!sheet && (
+        <div className="empty-hint" style={{ marginTop: 6 }}>
+          {ddbId(player)
+            ? 'Manual values — hit ⟳ to pull the exact sheet from D&D Beyond.'
+            : 'Manual values — use ✎ to edit, or add a D&D Beyond link to fetch.'}
+        </div>
+      )}
 
       <div className="sheet-foot">
         <span className="muted">{sheet ? `updated ${relativeTime(sheet.fetchedAt)}` : ''}</span>
@@ -344,6 +365,14 @@ function EditModal({ player, onClose }: { player: Player; onClose: () => void })
   const removePlayer = useStore((s) => s.removePlayer)
   const [d, setD] = useState<Player>(player)
   const setAbility = (k: keyof Abilities, v: number) => setD({ ...d, abilities: { ...d.abilities, [k]: v } })
+  const toggleSave = (k: keyof Abilities) => {
+    const on = new Set(d.saveProficiencies ?? [])
+    if (on.has(k)) on.delete(k)
+    else on.add(k)
+    // keep STR…CHA order canonical so re-renders are stable
+    setD({ ...d, saveProficiencies: ABILITY_KEYS.filter((a) => on.has(a)) })
+  }
+  const optNum = (raw: string) => (raw === '' ? undefined : parseInt(raw) || 0)
   const save = () => {
     updatePlayer(player.id, { ...d, ddbCharacterId: d.ddbUrl ? parseDdbId(d.ddbUrl) : undefined })
     onClose()
@@ -370,8 +399,38 @@ function EditModal({ player, onClose }: { player: Player; onClose: () => void })
             <input type="number" value={d.maxHp} onChange={(e) => setD({ ...d, maxHp: parseInt(e.target.value) || 0 })} />
           </label>
           <label className="field">
+            <span>Current HP</span>
+            <input
+              type="number"
+              placeholder={String(d.maxHp)}
+              value={d.currentHp ?? ''}
+              onChange={(e) => setD({ ...d, currentHp: optNum(e.target.value) })}
+            />
+          </label>
+          <label className="field">
             <span>AC</span>
             <input type="number" value={d.ac} onChange={(e) => setD({ ...d, ac: parseInt(e.target.value) || 0 })} />
+          </label>
+          <label className="field">
+            <span>Speed</span>
+            <input placeholder="30 ft." value={d.speed ?? ''} onChange={(e) => setD({ ...d, speed: e.target.value })} />
+          </label>
+          <label className="field">
+            <span>Initiative</span>
+            <input
+              placeholder={abilityMod(d.abilities.dex)}
+              value={d.initiative ?? ''}
+              onChange={(e) => setD({ ...d, initiative: e.target.value })}
+            />
+          </label>
+          <label className="field">
+            <span>Proficiency Bonus</span>
+            <input
+              type="number"
+              placeholder={`+${profBonusForLevel(d.level)}`}
+              value={d.profBonus ?? ''}
+              onChange={(e) => setD({ ...d, profBonus: optNum(e.target.value) })}
+            />
           </label>
           <label className="field full">
             <span>Portrait URL</span>
@@ -392,6 +451,51 @@ function EditModal({ player, onClose }: { player: Player; onClose: () => void })
               <input className="mini-input" type="number" value={d.abilities[k]} onChange={(e) => setAbility(k, parseInt(e.target.value) || 0)} />
             </div>
           ))}
+        </div>
+        <div className="section-label" style={{ margin: '6px 0' }}>
+          Saving Throw Proficiencies
+        </div>
+        <div className="save-prof-row">
+          {ABILITY_KEYS.map((k) => (
+            <Checkbox
+              key={k}
+              label={ABILITY_LABELS[k]}
+              checked={(d.saveProficiencies ?? []).includes(k)}
+              onChange={() => toggleSave(k)}
+            />
+          ))}
+        </div>
+        <div className="section-label" style={{ margin: '6px 0' }}>
+          Passive Scores <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>— blank = derived</span>
+        </div>
+        <div className="passive-edit">
+          <label className="field">
+            <span>Perception</span>
+            <input
+              type="number"
+              placeholder={String(10 + abilityModValue(d.abilities.wis))}
+              value={d.passivePerception ?? ''}
+              onChange={(e) => setD({ ...d, passivePerception: optNum(e.target.value) })}
+            />
+          </label>
+          <label className="field">
+            <span>Investigation</span>
+            <input
+              type="number"
+              placeholder={String(10 + abilityModValue(d.abilities.int))}
+              value={d.passiveInvestigation ?? ''}
+              onChange={(e) => setD({ ...d, passiveInvestigation: optNum(e.target.value) })}
+            />
+          </label>
+          <label className="field">
+            <span>Insight</span>
+            <input
+              type="number"
+              placeholder={String(10 + abilityModValue(d.abilities.wis))}
+              value={d.passiveInsight ?? ''}
+              onChange={(e) => setD({ ...d, passiveInsight: optNum(e.target.value) })}
+            />
+          </label>
         </div>
         <div className="modal-actions">
           <button className="btn" onClick={() => { if (confirm(`Remove ${player.name}?`)) { removePlayer(player.id); onClose() } }}>

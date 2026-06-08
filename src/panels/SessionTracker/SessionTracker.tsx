@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import type { ComponentType, DragEvent, ReactNode } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
@@ -12,6 +12,7 @@ import {
   EyeSlashIcon,
   LinkIcon,
   BookIcon,
+  ScrollIcon,
   SwordIcon,
   SwordsIcon,
   FilmIcon,
@@ -30,6 +31,7 @@ import {
 // `type` string and ANY `icon`. The exception: the LEAF content types below
 // (note / statblock / image) render dedicated content and never hold children.
 const NODE_TYPE_PRESETS: { type: string; Icon: ComponentType }[] = [
+  { type: 'adventure', Icon: ScrollIcon },
   { type: 'session', Icon: BookIcon },
   { type: 'quest', Icon: SwordIcon },
   { type: 'scene', Icon: FilmIcon },
@@ -87,6 +89,30 @@ function siblingNumbers(siblings: SessionNode[]): Map<string, number> {
   for (const s of siblings) {
     n = typeof s.number === 'number' && !Number.isNaN(s.number) ? s.number : n + 1
     out.set(s.id, n)
+  }
+  return out
+}
+
+function searchNodes(nodes: SessionNode[], q: string): SessionNode[] {
+  const t = q.trim().toLowerCase()
+  if (!t) return []
+  return nodes
+    .filter((n) => !n.refId) // canonical only — aliases have empty title/body
+    .filter(
+      (n) =>
+        n.title.toLowerCase().includes(t) ||
+        n.type.toLowerCase().includes(t) ||
+        n.body.toLowerCase().includes(t),
+    )
+    .slice(0, 50)
+}
+
+function ancestorTrail(nodes: SessionNode[], n: SessionNode): SessionNode[] {
+  const out: SessionNode[] = []
+  let cur = n.parentId ? nodes.find((x) => x.id === n.parentId) : undefined
+  while (cur) {
+    out.unshift(cur)
+    cur = cur.parentId ? nodes.find((x) => x.id === cur!.parentId) : undefined
   }
   return out
 }
@@ -178,18 +204,22 @@ function NodeRow({
   nodes,
   depth,
   setFocus,
+  goTo,
   collapsed,
   toggleCollapsed,
   expand,
+  highlightId,
 }: {
   node: SessionNode
   num: number
   nodes: SessionNode[]
   depth: number
   setFocus: (id: string | undefined) => void
+  goTo: (id: string) => void
   collapsed: Record<string, boolean>
   toggleCollapsed: (id: string) => void
   expand: (id: string) => void
+  highlightId: string | null
 }) {
   const updateNode = useStore((s) => s.updateNode)
   const removeNode = useStore((s) => s.removeNode)
@@ -200,7 +230,9 @@ function NodeRow({
   const moveNode = useStore((s) => s.moveNode)
   const addNode = useStore((s) => s.addNode)
 
-  const kids = childrenOf(nodes, node.id)
+  const isAlias = !!node.refId
+  const aliasTarget = isAlias ? nodes.find((n) => n.id === node.refId) : undefined
+  const kids = isAlias ? [] : childrenOf(nodes, node.id)
   const kidNums = siblingNumbers(kids)
   const isCollapsed = !!collapsed[node.id]
   const [typeOpen, setTypeOpen] = useState(false)
@@ -224,7 +256,9 @@ function NodeRow({
     e.preventDefault()
     const r = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - r.top
-    setDropZone(y < r.height * 0.3 ? 'before' : y > r.height * 0.7 ? 'after' : 'inside')
+    // Aliases can't hold children — clamp middle zone to 'after'.
+    const raw = y < r.height * 0.3 ? 'before' : y > r.height * 0.7 ? 'after' : 'inside'
+    setDropZone(isAlias && raw === 'inside' ? 'after' : raw)
   }
   const onDrop = (e: DragEvent) => {
     if (!e.dataTransfer.types.includes(NODE_MIME)) return
@@ -245,10 +279,19 @@ function NodeRow({
     }
   }
 
+  const highlighted = highlightId === node.id
+
   return (
     <div className="node">
       <div
-        className={'node-row' + (dragging ? ' dragging' : '') + (dropZone ? ' drop-' + dropZone : '')}
+        className={
+          'node-row' +
+          (isAlias ? ' alias' : '') +
+          (dragging ? ' dragging' : '') +
+          (dropZone ? ' drop-' + dropZone : '') +
+          (highlighted ? ' highlighted' : '')
+        }
+        data-node-id={node.id}
         style={{ paddingLeft: indent }}
         onDragOver={onDragOver}
         onDragLeave={() => setDropZone(null)}
@@ -263,7 +306,7 @@ function NodeRow({
         >
           ⠿
         </span>
-        {kids.length > 0 ? (
+        {!isAlias && kids.length > 0 ? (
           <button
             className="node-caret"
             title={isCollapsed ? 'Expand' : 'Collapse'}
@@ -274,28 +317,55 @@ function NodeRow({
         ) : (
           <span className="node-caret" />
         )}
-        <span className="node-type-icon" title={node.type + ' — click to change'} onClick={() => setTypeOpen((v) => !v)}>
-          {iconFor(node)}
-        </span>
-        <NumberPrefix node={node} num={num} />
-        <input
-          className="node-title"
-          value={node.title}
-          placeholder={placeholderFor(node)}
-          onChange={(e) => updateNode(node.id, { title: e.target.value })}
-        />
+
+        {isAlias ? (
+          // ── alias row ──────────────────────────────────────────────────────
+          aliasTarget ? (
+            <>
+              <span className="node-type-icon alias-badge" title="Alias — click to jump to original">↪</span>
+              <button
+                className="node-alias-label"
+                title={`Alias of "${aliasTarget.title || placeholderFor(aliasTarget)}" — click to jump`}
+                onClick={() => goTo(aliasTarget.id)}
+              >
+                {iconFor(aliasTarget)} {displayTitle(aliasTarget)}
+              </button>
+            </>
+          ) : (
+            <span className="node-alias-broken">⚠ broken reference</span>
+          )
+        ) : (
+          // ── normal row ─────────────────────────────────────────────────────
+          <>
+            <span className="node-type-icon" title={node.type + ' — click to change'} onClick={() => setTypeOpen((v) => !v)}>
+              {iconFor(node)}
+            </span>
+            <NumberPrefix node={node} num={num} />
+            <input
+              className="node-title"
+              value={node.title}
+              placeholder={placeholderFor(node)}
+              onChange={(e) => updateNode(node.id, { title: e.target.value })}
+            />
+          </>
+        )}
+
         <div className="node-actions">
           <button className="icon-btn" title="Move up" onClick={() => moveNodeUp(node.id)}>▲</button>
           <button className="icon-btn" title="Move down" onClick={() => moveNodeDown(node.id)}>▼</button>
           <button className="icon-btn" title="Outdent" onClick={() => outdentNode(node.id)}>⇤</button>
-          <button className="icon-btn" title="Indent under previous" onClick={() => indentNode(node.id)}>⇥</button>
-          <button className="icon-btn" title="Add child" onClick={() => { addNode(node.id, 'note'); expand(node.id)}}>＋</button>
-          <button className="icon-btn" title="Focus / zoom in" onClick={() => setFocus(node.id)}>⤢</button>
+          {!isAlias && (
+            <>
+              <button className="icon-btn" title="Indent under previous" onClick={() => indentNode(node.id)}>⇥</button>
+              <button className="icon-btn" title="Add child" onClick={() => { addNode(node.id, 'note'); expand(node.id) }}>＋</button>
+              <button className="icon-btn" title="Focus / zoom in" onClick={() => setFocus(node.id)}>⤢</button>
+            </>
+          )}
           <button
             className="icon-btn danger"
-            title="Delete (with everything inside)"
+            title={isAlias ? 'Remove alias' : 'Delete (with everything inside)'}
             onClick={() => {
-              if (confirm(`Delete "${node.title}" and everything inside it?`)) removeNode(node.id)
+              if (isAlias || confirm(`Delete "${node.title}" and everything inside it?`)) removeNode(node.id)
             }}
           >
             ✕
@@ -303,7 +373,7 @@ function NodeRow({
         </div>
       </div>
 
-      {typeOpen && (
+      {!isAlias && typeOpen && (
         <div className="node-type-popover" style={{ marginLeft: indent + 22 }}>
           {NODE_TYPE_PRESETS.map((p) => (
             <button
@@ -344,7 +414,7 @@ function NodeRow({
         </div>
       )}
 
-      {!isCollapsed &&
+      {!isAlias && !isCollapsed &&
         kids.map((k) => (
           <NodeRow
             key={k.id}
@@ -353,9 +423,11 @@ function NodeRow({
             nodes={nodes}
             depth={depth + 1}
             setFocus={setFocus}
+            goTo={goTo}
             collapsed={collapsed}
             toggleCollapsed={toggleCollapsed}
             expand={expand}
+            highlightId={highlightId}
           />
         ))}
     </div>
@@ -388,41 +460,50 @@ function Breadcrumb({
         const siblings = childrenOf(nodes, n.parentId)
         const hasMenu = siblings.length > 1
         const open = menuFor === n.id
-        return (<>
-          <span className="crumb-caret">▸</span>
-          <span className="crumb-wrap" key={n.id}>
-            <button
-              className="crumb"
-              title={hasMenu ? 'Switch to a sibling' : undefined}
-              onClick={() => (hasMenu ? setMenuFor(open ? null : n.id) : setFocus(n.id))}
-            >
-              {iconFor(n)} {displayTitle(n)}
-              {hasMenu && <span className="crumb-caret">▾</span>}
-            </button>
-            {open && (
-              <>
-                <div className="crumb-overlay" onClick={() => setMenuFor(null)} />
-                <div className="crumb-menu">
-                  {(() => {
-                    const nums = siblingNumbers(siblings)
-                    return siblings.map((s) => (
-                      <button
-                        key={s.id}
-                        className={'crumb-menu-item' + (s.id === n.id ? ' current' : '')}
-                        onClick={() => {
-                          setFocus(s.id)
-                          setMenuFor(null)
-                        }}
-                      >
-                        <span className="muted">{nums.get(s.id)}.</span> {iconFor(s)} {displayTitle(s)}
-                      </button>
-                    ))
-                  })()}
-                </div>
-              </>
-            )}
-          </span>
-        </>
+        return (
+          <Fragment key={n.id}>
+            <span className="crumb-caret">▸</span>
+            <span className="crumb-wrap">
+              <button
+                className="crumb"
+                title="Focus this node"
+                onClick={() => { setFocus(n.id); setMenuFor(null) }}
+              >
+                {iconFor(n)} {displayTitle(n)}
+              </button>
+              {hasMenu && (
+                <button
+                  className="crumb-caret-btn"
+                  title="Switch to a sibling"
+                  onClick={() => setMenuFor(open ? null : n.id)}
+                >
+                  ▾
+                </button>
+              )}
+              {open && (
+                <>
+                  <div className="crumb-overlay" onClick={() => setMenuFor(null)} />
+                  <div className="crumb-menu">
+                    {(() => {
+                      const nums = siblingNumbers(siblings)
+                      return siblings.map((s) => (
+                        <button
+                          key={s.id}
+                          className={'crumb-menu-item' + (s.id === n.id ? ' current' : '')}
+                          onClick={() => {
+                            setFocus(s.id)
+                            setMenuFor(null)
+                          }}
+                        >
+                          <span className="muted">{nums.get(s.id)}.</span> {iconFor(s)} {displayTitle(s)}
+                        </button>
+                      ))
+                    })()}
+                  </div>
+                </>
+              )}
+            </span>
+          </Fragment>
         )
       })}
     </div>
@@ -582,7 +663,7 @@ function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (id: stri
           {creature ? (
             <StatBlock creature={creature} />
           ) : (
-            <div className="node-empty">No creature linked — click “Link creature”.</div>
+            <div className="node-empty">No creature linked — click "Link creature".</div>
           )}
         </div>
       )}
@@ -611,6 +692,110 @@ function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (id: stri
   )
 }
 
+// ── search box ───────────────────────────────────────────────────────────────
+function SearchBox({
+  nodes,
+  query,
+  setQuery,
+  onPick,
+}: {
+  nodes: SessionNode[]
+  query: string
+  setQuery: (q: string) => void
+  onPick: (id: string) => void
+}) {
+  const results = searchNodes(nodes, query)
+  const open = query.trim().length > 0
+  return (
+    <div className="session-search">
+      <div className="session-search-input-wrap">
+        <input
+          className="session-search-input"
+          placeholder="Search all nodes…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {query && (
+          <button className="session-search-clear" onClick={() => setQuery('')} title="Clear search">✕</button>
+        )}
+      </div>
+      {open && (
+        <div className="session-search-results">
+          {results.length === 0 ? (
+            <div className="session-search-empty">No matches.</div>
+          ) : (
+            results.map((n) => {
+              const trail = ancestorTrail(nodes, n)
+              const crumb = ['Top', ...trail.map((a) => (a.title.trim() ? a.title : `New ${a.type}`))]
+              return (
+                <button
+                  key={n.id}
+                  className="session-search-result"
+                  onClick={() => { onPick(n.id); setQuery('') }}
+                >
+                  <span>{iconFor(n)} {displayTitle(n)}</span>
+                  <span className="session-search-crumb">{crumb.join(' › ')}</span>
+                </button>
+              )
+            })
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── alias / reference picker ──────────────────────────────────────────────────
+function ReferencePicker({
+  nodes,
+  onPick,
+  onClose,
+}: {
+  nodes: SessionNode[]
+  onPick: (refId: string) => void
+  onClose: () => void
+}) {
+  const [q, setQ] = useState('')
+  const results = searchNodes(nodes, q)
+  return (
+    <div className="overlay center" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ width: 'min(480px, 95vw)' }}>
+        <h2>Add reference alias</h2>
+        <p className="modal-hint">Pick a node to place a read-only alias here. Clicking the alias jumps to the original.</p>
+        <input
+          type="text"
+          placeholder="Search nodes…"
+          value={q}
+          autoFocus
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <div className="creature-pick-list">
+          {q.trim() === '' && <div className="empty-hint">Type to search for a node.</div>}
+          {q.trim() !== '' && results.length === 0 && <div className="empty-hint">No matches.</div>}
+          {results.map((n) => {
+            const trail = ancestorTrail(nodes, n)
+            const crumb = ['Top', ...trail.map((a) => (a.title.trim() ? a.title : `New ${a.type}`))]
+            return (
+              <button
+                key={n.id}
+                className="creature-pick"
+                onClick={() => { onPick(n.id); onClose() }}
+              >
+                {iconFor(n)} {displayTitle(n)}
+                <span className="muted" style={{ fontStyle: 'italic' }}> — {crumb.join(' › ')}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="modal-actions">
+          <span className="spacer" />
+          <button className="btn" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function SessionTracker({
   config,
   onConfig,
@@ -620,8 +805,10 @@ export function SessionTracker({
 }) {
   const nodes = useStore((s) => s.sessionNodes)
   const addNode = useStore((s) => s.addNode)
+  const addAlias = useStore((s) => s.addAlias)
   const updateNode = useStore((s) => s.updateNode)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
+  const [refPickerParent, setRefPickerParent] = useState<string | undefined | null>(null)
 
   // Per-panel focus (zoom). Fall back to top level if the stored id is gone.
   const storedFocus = config?.focusId as string | undefined
@@ -667,9 +854,36 @@ export function SessionTracker({
       // type would otherwise default to hidden.
       const bottomY = roots.reduce((m, n) => Math.max(m, (n.layout?.y ?? 0) + (n.layout?.h ?? 0)), 0)
       updateNode(id, { layout: { x: 0, y: bottomY, w: Math.min(6, boardCols), h: 6 }, hidden: false })
-    } else {
-      setFocus(id)
     }
+  }
+
+  // Search (transient — not persisted in config).
+  const [query, setQuery] = useState('')
+
+  // Transient highlight after goTo jump.
+  const [highlightId, setHighlightId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!highlightId) return
+    const el = document.querySelector(`[data-node-id="${highlightId}"]`)
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const t = setTimeout(() => setHighlightId(null), 1500)
+    return () => clearTimeout(t)
+  }, [highlightId])
+
+  // Jump to any node: focus its parent, expand ancestors, then highlight it.
+  const goTo = (id: string) => {
+    const target = nodes.find((n) => n.id === id)
+    if (!target) return
+    const chain: string[] = []
+    let cur = target.parentId ? nodes.find((n) => n.id === target.parentId) : undefined
+    while (cur) {
+      chain.push(cur.id)
+      cur = cur.parentId ? nodes.find((n) => n.id === cur!.parentId) : undefined
+    }
+    const nextCollapsed = { ...collapsed }
+    for (const a of chain) nextCollapsed[a] = false
+    onConfig({ focusId: target.parentId, collapsed: nextCollapsed })
+    setHighlightId(id)
   }
 
   return (
@@ -680,10 +894,19 @@ export function SessionTracker({
           <button
             className="btn btn-accent"
             onClick={addHere}
-            title={view === 'board' ? 'Add a card' : atTop ? 'Add a top-level session' : 'Add a child node'}
+            title={view === 'board' ? 'Add a card' : 'Add a child node'}
           >
-            {view === 'board' ? '+ Card' : atTop ? '+ Session' : '+ Node'}
+            {view === 'board' ? '+ Card' : '+ Node'}
           </button>
+          {view === 'tree' && (
+            <button
+              className="btn"
+              title="Add a reference alias to an existing node"
+              onClick={() => setRefPickerParent(focusId ?? undefined)}
+            >
+              + Ref
+            </button>
+          )}
           <span className="view-toggle">
             <button
               className={'btn' + (view === 'tree' ? ' btn-accent' : '')}
@@ -725,6 +948,14 @@ export function SessionTracker({
           <span className="session-step">
             <button
               className="btn"
+              title="Go up one level"
+              disabled={atTop}
+              onClick={() => setFocus(focusNode?.parentId)}
+            >
+              ↑ Up
+            </button>
+            <button
+              className="btn"
               title="Focus the previous sibling"
               disabled={!canCycle}
               onClick={() => cycleSibling(-1)}
@@ -741,6 +972,9 @@ export function SessionTracker({
             </button>
           </span>
         </div>
+        {view === 'tree' && (
+          <SearchBox nodes={nodes} query={query} setQuery={setQuery} onPick={goTo} />
+        )}
       </div>
 
       <div className="session-tree-body">
@@ -750,10 +984,8 @@ export function SessionTracker({
             {boardItems.length === 0 ? (
               <div className="empty-hint">
                 {roots.length === 0
-                  ? atTop
-                    ? 'No sessions yet — click “+ Card”.'
-                    : 'No child cards yet — click “+ Card” to add one.'
-                  : `All ${hiddenCount} card(s) hidden — click the “Hidden” toggle to reveal.`}
+                  ? 'No child cards yet — click "+ Card" to add one.'
+                  : `All ${hiddenCount} card(s) hidden — click the "Hidden" toggle to reveal.`}
               </div>
             ) : (
             <Board
@@ -779,7 +1011,7 @@ export function SessionTracker({
           </>
         ) : roots.length === 0 ? (
           <div className="empty-hint">
-            {atTop ? 'No sessions yet. Click “+ Session”.' : 'Nothing here yet. Click “+ Node”.'}
+            Nothing here yet. Click "+ Node".
           </div>
         ) : (
           roots.map((n) => (
@@ -790,15 +1022,28 @@ export function SessionTracker({
               nodes={nodes}
               depth={0}
               setFocus={setFocus}
+              goTo={goTo}
               collapsed={collapsed}
               toggleCollapsed={toggleCollapsed}
               expand={expand}
+              highlightId={highlightId}
             />
           ))
         )}
       </div>
 
       {pickerFor && <CreaturePicker nodeId={pickerFor} onClose={() => setPickerFor(null)} />}
+      {refPickerParent !== null && (
+        <ReferencePicker
+          nodes={nodes}
+          onPick={(refId) => {
+            const id = addAlias(refPickerParent, refId)
+            if (refPickerParent !== undefined) expand(refPickerParent)
+            setHighlightId(id)
+          }}
+          onClose={() => setRefPickerParent(null)}
+        />
+      )}
     </div>
   )
 }

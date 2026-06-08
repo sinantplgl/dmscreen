@@ -189,6 +189,7 @@ interface Actions {
 
   // session tracker (nested tree)
   addNode: (parentId: string | undefined, type: string) => string
+  addAlias: (parentId: string | undefined, refId: string) => string
   updateNode: (id: string, patch: Partial<SessionNode>) => void
   removeNode: (id: string) => void
   moveNodeUp: (id: string) => void
@@ -666,6 +667,25 @@ export const useStore = create<Store>()(
         return id
       },
 
+      addAlias: (parentId, refId) => {
+        const id = uid('sn')
+        set((s) => {
+          const target = s.sessionNodes.find((n) => n.id === refId)
+          const order = childrenOf(s.sessionNodes, parentId).length
+          const node: SessionNode = {
+            id,
+            parentId,
+            order,
+            type: target?.type ?? 'note',
+            title: '',
+            body: '',
+            refId,
+          }
+          return { sessionNodes: [...s.sessionNodes, node] }
+        })
+        return id
+      },
+
       updateNode: (id, patch) =>
         set((s) => ({ sessionNodes: s.sessionNodes.map((n) => (n.id === id ? { ...n, ...patch } : n)) })),
 
@@ -673,7 +693,8 @@ export const useStore = create<Store>()(
         set((s) => {
           const node = s.sessionNodes.find((n) => n.id === id)
           const doomed = new Set([id, ...descendantIds(s.sessionNodes, id)])
-          const remaining = s.sessionNodes.filter((n) => !doomed.has(n.id))
+          // Also remove any alias nodes pointing into the doomed set.
+          const remaining = s.sessionNodes.filter((n) => !doomed.has(n.id) && !(n.refId && doomed.has(n.refId)))
           return { sessionNodes: normalizeOrders(remaining, node?.parentId) }
         }),
 

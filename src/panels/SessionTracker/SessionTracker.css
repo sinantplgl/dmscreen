@@ -324,3 +324,93 @@
   text-transform: uppercase;
   color: var(--gold);
 }
+
+/* ── Search box ── */
+.session-search { position: relative; margin-top: 6px; }
+.session-search-input-wrap { display: flex; align-items: center; gap: 4px; }
+.session-search-input { flex: 1; }
+.session-search-clear {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+.session-search-clear:hover { background: var(--card2); color: var(--text); }
+.session-search-results {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  max-height: 320px;
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+}
+.session-search-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.session-search-result:hover { background: var(--surface); }
+.session-search-crumb { font-size: 11px; color: var(--muted); }
+.session-search-empty { padding: 8px 10px; font-size: 13px; color: var(--muted); font-style: italic; }
+
+/* ── Highlight flash after jump ── */
+.node-row.highlighted {
+  outline: 1px solid var(--accent);
+  background: var(--card2);
+  transition: outline 0.3s, background 0.3s;
+}
+
+/* ── Breadcrumb sibling caret button ── */
+.crumb-caret-btn {
+  background: none;
+  border: none;
+  color: var(--gold);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+  border-radius: 3px;
+  opacity: 0.75;
+  line-height: 1;
+}
+.crumb-caret-btn:hover { background: var(--card2); opacity: 1; }
+
+/* ── Alias / reference nodes ── */
+.node-row.alias { border-left-color: var(--accent); opacity: 0.9; }
+.node-row.alias:hover { opacity: 1; }
+.node-alias-label {
+  flex: 1;
+  min-width: 40px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  font-style: italic;
+  text-align: left;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.node-alias-label:hover { color: var(--gold); background: var(--surface); }
+.alias-badge { color: var(--accent) !important; cursor: default !important; }
+.node-alias-broken { flex: 1; font-size: 13px; color: var(--muted); font-style: italic; }
+
+/* modal hint text */
+.modal-hint { font-size: 13px; color: var(--muted); margin: 2px 0 8px; }

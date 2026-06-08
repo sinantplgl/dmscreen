@@ -249,6 +249,10 @@ export interface SessionNode {
   layout?: { x: number; y: number; w: number; h: number }
   /** Hidden from the board view (still visible in the tree). */
   hidden?: boolean
+  /** When set, this is an alias node pointing at the canonical node with this id.
+   *  The alias renders the target's icon/title (read-only) and jumps to it on click.
+   *  Alias nodes carry no children, body, or content of their own. */
+  refId?: string
 }
 
 /** A single roll of a dice pool: the individual die faces plus the final total. */

@@ -513,10 +513,12 @@ function Breadcrumb({
 // ── one card in the board view (renders a single node's content by type) ──────
 function NodeCard({
   node,
+  nodes,
   setFocus,
   onPick,
 }: {
   node: SessionNode
+  nodes: SessionNode[]
   setFocus: (id: string | undefined) => void
   onPick: (id: string) => void
 }) {
@@ -524,8 +526,55 @@ function NodeCard({
   const updateNode = useStore((s) => s.updateNode)
   const removeNode = useStore((s) => s.removeNode)
   const [editing, setEditing] = useState(false)
-  const leaf = isLeafType(node.type)
   const hidden = isHidden(node)
+
+  // ── alias card ──────────────────────────────────────────────────────────────
+  if (node.refId) {
+    const target = nodes.find((n) => n.id === node.refId)
+    if (!target) {
+      return (
+        <div className="node-card alias leaf">
+          <div className="node-card-head">
+            <span className="drag-grip" title="Drag to move">⠿</span>
+            <span className="node-alias-broken" style={{ flex: 1 }}>⚠ broken reference</span>
+            <button className="icon-btn danger" title="Remove alias" onClick={() => removeNode(node.id)}>✕</button>
+          </div>
+        </div>
+      )
+    }
+    const targetCreature = target.creatureId ? bestiary.find((b) => b.id === target.creatureId) : undefined
+    const targetLeaf = isLeafType(target.type)
+    return (
+      <div className={'node-card alias' + (targetLeaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
+        <div className="node-card-head">
+          <span className="drag-grip" title="Drag to move">⠿</span>
+          <span className="alias-badge node-type-icon">↪</span>
+          <span className="node-type-icon" title={target.type}>{iconFor(target)}</span>
+          <span className="node-alias-card-title">{displayTitle(target)}</span>
+          <span className="spacer" />
+          <button className="icon-btn" title="Focus into original" onClick={() => setFocus(target.id)}>⤢</button>
+          <button className="icon-btn danger" title="Remove alias" onClick={() => removeNode(node.id)}>✕</button>
+        </div>
+        <div className="node-card-body">
+          {target.type === 'statblock' ? (
+            targetCreature ? <StatBlock creature={targetCreature} /> : <div className="node-empty">No creature linked.</div>
+          ) : target.type === 'image' ? (
+            target.imageUrl
+              ? <img className="node-card-img" src={target.imageUrl} alt={target.title} />
+              : <div className="node-empty">No image set.</div>
+          ) : target.body ? (
+            <Markdown text={target.body} />
+          ) : (
+            <div className="node-empty">No notes.</div>
+          )}
+          {target.type === 'item' && <NodeItems node={target} />}
+        </div>
+      </div>
+    )
+  }
+
+  // ── normal card ─────────────────────────────────────────────────────────────
+  const leaf = isLeafType(node.type)
   const creature = node.creatureId ? bestiary.find((b) => b.id === node.creatureId) : undefined
 
   return (
@@ -1002,6 +1051,7 @@ export function SessionTracker({
               renderItem={(n) => (
                 <NodeCard
                   node={n}
+                  nodes={nodes}
                   setFocus={setFocus}
                   onPick={setPickerFor}
                 />

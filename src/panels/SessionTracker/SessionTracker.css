@@ -411,6 +411,7 @@
 .node-alias-label:hover { color: var(--gold); background: var(--surface); }
 .alias-badge { color: var(--accent) !important; cursor: default !important; }
 .node-alias-broken { flex: 1; font-size: 13px; color: var(--muted); font-style: italic; }
+.node-alias-card-title { flex: 1; font-size: 14px; font-weight: 500; font-style: italic; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* modal hint text */
 .modal-hint { font-size: 13px; color: var(--muted); margin: 2px 0 8px; }

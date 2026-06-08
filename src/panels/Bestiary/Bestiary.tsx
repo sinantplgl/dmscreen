@@ -329,7 +329,7 @@ export function Bestiary() {
   const [editId, setEditId] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
 
-  const filtered = bestiary.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())).sort()
+  const filtered = bestiary.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())).sort((c1, c2) => c1.name.localeCompare(c2.name))
   const editing = bestiary.find((c) => c.id === editId)
 
   return (

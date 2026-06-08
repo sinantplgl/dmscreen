@@ -5,9 +5,18 @@ import type { Box } from '../../components/Board/Board'
 import { Checkbox } from '../../components/Checkbox'
 import { useStore } from '../../store/store'
 import type { RefItem } from '../../types'
-import { RefItemView } from './ReferenceCards'
+import { RefItemView, type CardSettings } from './ReferenceCards'
 
 const DEFAULT_COLS = 12
+
+/** Does a card's text content contain the query? Searches title + type-specific body. */
+function cardMatches(item: RefItem, q: string): boolean {
+  const hay: string[] = [item.title]
+  if ('rows' in item) hay.push(...item.columns, ...item.rows.flat())
+  else if ('body' in item) hay.push(item.body)
+  else if (item.caption) hay.push(item.caption)
+  return hay.join('\n').toLowerCase().includes(q)
+}
 
 export function ReferenceTables({
   config,
@@ -25,10 +34,17 @@ export function ReferenceTables({
   const shownIds = (config?.refShownIds as string[]) ?? []
   const layouts = (config?.refLayouts as Record<string, Box>) ?? {}
   const cols = (config?.refCols as number) ?? DEFAULT_COLS
+  const allCardSettings = (config?.refCardSettings as Record<string, CardSettings>) ?? {}
+
   const [pickOpen, setPickOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [contentQuery, setContentQuery] = useState('')
 
   const byId = new Map(library.map((it) => [it.id, it]))
   const shown = shownIds.map((id) => byId.get(id)).filter((it): it is RefItem => !!it)
+  const filtered = query
+    ? library.filter((it) => it.title.toLowerCase().includes(query.toLowerCase()))
+    : library
 
   const bottomY = shown.reduce((m, it) => {
     const b = layouts[it.id]
@@ -42,6 +58,8 @@ export function ReferenceTables({
   }
   const hideFromPanel = (id: string) => onConfig({ refShownIds: shownIds.filter((x) => x !== id) })
   const setLayout = (id: string, box: Box) => onConfig({ refLayouts: { ...layouts, [id]: box } })
+  const setCardSettings = (id: string, s: CardSettings) =>
+    onConfig({ refCardSettings: { ...allCardSettings, [id]: s } })
 
   const createItem = (kind: 'table' | 'note' | 'image') => showOnPanel(addRefItem(kind))
   const copyItem = (id: string) => showOnPanel(copyRefItem(id))
@@ -50,6 +68,11 @@ export function ReferenceTables({
       return
     removeRefItem(item.id)
     if (shownIds.includes(item.id)) hideFromPanel(item.id)
+  }
+
+  const closePicker = () => {
+    setPickOpen(false)
+    setQuery('')
   }
 
   return (
@@ -65,15 +88,24 @@ export function ReferenceTables({
           </button>
           {pickOpen && (
             <>
-              <div className="ref-lib-overlay" onClick={() => setPickOpen(false)} />
+              <div className="ref-lib-overlay" onClick={closePicker} />
               <div className="ref-lib-menu">
                 <div className="ref-lib-head">Show on this panel</div>
+                <input
+                  className="ref-lib-search"
+                  placeholder="Filter…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoFocus
+                />
                 {library.length === 0 ? (
                   <div className="ref-lib-empty">
                     No references yet — create one with the + buttons.
                   </div>
+                ) : filtered.length === 0 ? (
+                  <div className="ref-lib-empty">No matches.</div>
                 ) : (
-                  library.map((it) => (
+                  filtered.map((it) => (
                     <div key={it.id} className="ref-lib-item">
                       <Checkbox
                         checked={shownIds.includes(it.id)}
@@ -103,6 +135,13 @@ export function ReferenceTables({
         <button className="btn btn-sm" onClick={() => createItem('image')}>
           + Image
         </button>
+        <input
+          className="ref-content-search"
+          placeholder="Search content…"
+          value={contentQuery}
+          onChange={(e) => setContentQuery(e.target.value)}
+          title="Highlight cards on this panel whose content matches"
+        />
         <span className="spacer" />
         <label className="ref-cols-ctl" title="Grid columns — fewer = larger cells">
           Columns
@@ -131,9 +170,21 @@ export function ReferenceTables({
           onLayout={setLayout}
           defaultBox={{ x: 0, y: 0, w: Math.min(6, cols), h: 6 }}
           itemClassName="parchment"
-          renderItem={(it) => (
-            <RefItemView item={it} update={updateRefItem} copy={copyItem} hide={hideFromPanel} />
-          )}
+          renderItem={(it) => {
+            const matched = !!contentQuery && cardMatches(it, contentQuery.toLowerCase())
+            return (
+              <RefItemView
+                item={it}
+                update={updateRefItem}
+                copy={copyItem}
+                hide={hideFromPanel}
+                settings={allCardSettings[it.id] ?? {}}
+                onSettings={(s) => setCardSettings(it.id, s)}
+                matched={matched}
+                dimmed={!!contentQuery && !matched}
+              />
+            )
+          }}
         />
       )}
     </div>

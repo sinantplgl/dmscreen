@@ -52,3 +52,56 @@
   margin-right: 4px;
   font-size: 12px;
 }
+.ref-lib-empty { padding: 6px 8px; font-size: 12px; color: var(--muted); }
+.ref-lib-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Toolbar input that searches the content of cards shown on this panel. */
+.ref-content-search {
+  width: 140px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+/* card ⋯ settings popover (position: fixed, positioned via JS).
+   Grid layout: labels col 1, steppers col 2 — all rows align automatically. */
+.ref-settings-menu {
+  position: fixed;
+  z-index: 200;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  row-gap: 8px;
+  column-gap: 16px;
+  font-size: 12px;
+  color: var(--text);
+}
+.ref-stepper { display: inline-flex; align-items: center; gap: 3px; }
+/* Stepper buttons live outside .table-title so parchment's red-text rules don't reach them. */
+.ref-stepper-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 20px;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ref-stepper-btn:hover { background: var(--surface); color: var(--text); }

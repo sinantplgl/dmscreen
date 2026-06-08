@@ -279,7 +279,28 @@
   padding: 10px 14px 12px;
   border-top: 4px solid #e69a28;
   /* border-bottom: 4px solid #e69a28; */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
+/* Scrollable content area — only the body scrolls, the header stays fixed. */
+.book-table .ref-card-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  font-size: var(--ref-font-size, 13px);
+}
+/* Multi-column wrapper for notes: auto height so column-count N balances columns
+   downward rather than spilling horizontally. */
+.book-table .ref-card-content {
+  column-gap: 16px;
+}
+/* Content search: matching cards keep an accent ring; non-matches dim out. */
+.book-table.ref-dimmed { opacity: 0.28; transition: opacity 0.12s; }
+.book-table.ref-match { box-shadow: inset 0 0 0 2px var(--accent); }
 .book-table .table-title {
   font-family: 'Cinzel', serif;
   color: #58180d;
@@ -294,7 +315,7 @@
 .book-table table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--ref-font-size, 13px);
 }
 .book-table th {
   color: #58180d;

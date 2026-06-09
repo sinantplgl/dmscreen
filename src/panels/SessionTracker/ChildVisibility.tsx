@@ -9,6 +9,8 @@ import { iconFor, isHidden, displayTitle } from './helpers'
 export function ChildVisibility({ children }: { children: SessionNode[] }) {
   const allNodes = useStore((s) => s.sessionNodes)
   const updateNode = useStore((s) => s.updateNode)
+  const customNodeTypes = useStore((s) => s.customNodeTypes)
+  const customTypeNames = new Set(customNodeTypes.map((t) => t.type))
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -38,7 +40,7 @@ export function ChildVisibility({ children }: { children: SessionNode[] }) {
           <div className="ref-settings-menu child-vis-menu" style={{ top: pos.top, right: pos.right }}>
             <div className="child-vis-title">Card visibility</div>
             {children.map((n) => {
-              const hidden = isHidden(n)
+              const hidden = isHidden(n, customTypeNames)
               const target = n.refId ? allNodes.find((c) => c.id === n.refId) ?? null : null
               const labelNode = n.refId ? target : n
               return (

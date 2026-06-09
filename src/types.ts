@@ -278,6 +278,16 @@ export interface SessionNode {
   creatures?: { creatureId: string; count: number }[]
 }
 
+/** A user-defined session-node type, shared across campaigns and re-pickable. */
+export interface CustomNodeType {
+  type: string // the label, e.g. 'trap'
+  icon?: string // ICON_LIBRARY key (e.g. 'trap') or a literal emoji/character
+  /** Built-in type this extends; the node behaves like `base` (sections, leaf-ness,
+   *  stat-block/image handling) and falls back to it when the custom type is deleted.
+   *  Defaults to 'note' when absent. */
+  base?: string
+}
+
 /** A single roll of a dice pool: the individual die faces plus the final total. */
 export interface RollResult {
   rolls: number[] // individual die faces, in pool order
@@ -330,6 +340,9 @@ export interface AppData extends CampaignState {
   bestiary: Creature[]
   items: Item[]
   tables: RefItem[]
+  /** User-defined session-node types, reusable across campaigns. `icon` is an
+   *  ICON_LIBRARY key or a literal emoji/character. */
+  customNodeTypes: CustomNodeType[]
   /**
    * D&D Beyond CobaltSession cookie, used by the proxy to fetch campaign-only
    * characters. Persisted locally for convenience but deliberately EXCLUDED from

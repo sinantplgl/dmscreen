@@ -544,6 +544,176 @@ export function AttunementIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+// ── Extra fantasy glyphs for custom node types (game-icons.net, CC BY 3.0) ──
+export function TrapIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M27.7 23.7v48.1l79.9 53.3v-39.2zm456.6 0l-79.9 62.2v39.2l79.9-53.3zM171.3 84.5c-9.7.13-19.4 3.43-27.5 9.92l85.4 68.28c3.2-4.6 7.1-8.7 11.5-12.3l-52.9-60.49c-5.3-3.62-11-5.49-16.5-5.41zm169.4 0c-5.5-.08-11.2 1.79-16.5 5.41l-52.9 60.49c4.4 3.6 8.3 7.7 11.5 12.3l85.4-68.28c-8.1-6.49-17.8-9.79-27.5-9.92zM256 169c-22 0-39.9 17.9-39.9 39.9 0 22.1 17.9 40 39.9 40s39.9-17.9 39.9-40c0-22-17.9-39.9-39.9-39.9zM73.9 152.6L18 192.7l66.65 31.8 33.85-25.4zm364.2 0l-44.5 46.5 33.9 25.4 66.6-31.8zM256 267.4c-12.5 0-24.3-3.3-34.5-9l-50.6 187.9 39.7-15.5L256 348l45.4 82.8 39.7 15.5-50.6-187.9c-10.2 5.7-22 9-34.5 9zm-153.2-31.9l-70.46 41.7 50.06 27.6 56.5-42.4zm306.4 0l-36.1 26.9 56.5 42.4 50.1-27.6z"/>
+    </svg>
+  )
+}
+export function PotionIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M192 32v32h32V32zm96 0v32h32V32zM208 96c-8.8 0-16 7.2-16 16v66.9c0 12.7-5.6 24.8-15.3 33.1l-66.2 56.7C92.4 287.2 80 314 80 342.3V400c0 44.2 35.8 80 80 80h192c44.2 0 80-35.8 80-80v-57.7c0-28.3-12.4-55.1-30.5-73.6l-66.2-56.7c-9.7-8.3-15.3-20.4-15.3-33.1V112c0-8.8-7.2-16-16-16zm16 32h64v50.9c0 23.7 10.4 46.2 28.5 61.6l66.2 56.7c1.4 1.2 2.7 2.5 4 3.8H125.3c1.3-1.3 2.6-2.6 4-3.8l66.2-56.7c18.1-15.4 28.5-37.9 28.5-61.6z"/>
+    </svg>
+  )
+}
+export function KeyIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 8 10h-.535A4 4 0 0 1 0 8m4-3a3 3 0 1 0 2.712 4.285A.5.5 0 0 1 7.163 9h.63l.853-.854a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.793-.793-1-1h-6.63a.5.5 0 0 1-.451-.285A3 3 0 0 0 4 5m0 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2"/>
+    </svg>
+  )
+}
+export function CrownIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M256 64l-58.7 117.3L64 117.3l37.3 224h309.4l37.3-224-133.3 64zM96 384v64h320v-64z"/>
+    </svg>
+  )
+}
+export function SkullIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M8 0C4.7 0 2 2.7 2 6c0 2 1 3.8 2.5 4.9V13c0 .6.4 1 1 1h1v-1.5a.5.5 0 0 1 1 0V14h1v-1.5a.5.5 0 0 1 1 0V14h1c.6 0 1-.4 1-1v-2.1C13 9.8 14 8 14 6c0-3.3-2.7-6-6-6M5.5 8a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3m5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3"/>
+    </svg>
+  )
+}
+export function ChestIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M80 96C53.5 96 32 117.5 32 144v48h448v-48c0-26.5-21.5-48-48-48zm-48 128v144c0 26.5 21.5 48 48 48h152v-48h-16a16 16 0 0 1-16-16v-32a16 16 0 0 1 16-16h16v-32zm288 0v32h16a16 16 0 0 1 16 16v32a16 16 0 0 1-16 16h-16v48h112c26.5 0 48-21.5 48-48V224zm-32 0v32h-64v-32zm0 80v48h-64v-48z"/>
+    </svg>
+  )
+}
+export function CoinsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M5 3.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7M2.5 7A2.5 2.5 0 0 1 5 4.5a.5.5 0 0 1 0 1A1.5 1.5 0 0 0 3.5 7a.5.5 0 0 1-1 0M11 5.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7M8.5 9A2.5 2.5 0 0 1 11 6.5a.5.5 0 0 1 0 1A1.5 1.5 0 0 0 9.5 9a.5.5 0 0 1-1 0"/>
+    </svg>
+  )
+}
+export function TorchIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M256 16c-32 48-80 80-80 144 0 23 9 44 24 59-8-4-15-10-21-18-12 18-19 39-19 61 0 53 43 96 96 96s96-43 96-96c0-22-7-43-19-61-6 8-13 14-21 18 15-15 24-36 24-59 0-64-48-96-80-144zm-40 384l-40 96h160l-40-96z"/>
+    </svg>
+  )
+}
+export function BannerIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M4 0a1 1 0 0 0-1 1v14.5a.5.5 0 0 0 .8.4L8 12.5l4.2 3.4a.5.5 0 0 0 .8-.4V1a1 1 0 0 0-1-1zm4 8.5L5.5 10V3h5v7z"/>
+    </svg>
+  )
+}
+export function TowerIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M96 32v64H64v64h32v288h96V336a64 64 0 0 1 128 0v112h96V160h32V96h-32V32h-64v64h-64V32h-64v64h-64V32z"/>
+    </svg>
+  )
+}
+export function TreeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M256 16l-96 160h48L128 304h64L96 432h160v64h0v-64h160l-96-128h64l-80-128h48z"/>
+    </svg>
+  )
+}
+export function ShipIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M240 16v48h-80v48h80v160H64l32 128c0 32 64 64 160 64s160-32 160-64l32-128H272V112h80V64h-80V16zM96 304h320l-20 80c-8 16-60 48-140 48s-132-32-140-48z"/>
+    </svg>
+  )
+}
+export function AnchorIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M1 8a7 7 0 1 0 14 0h-1.5a5.5 5.5 0 0 1-4.75 5.45V6h1.5V4.5H8.75V3.45a1.5 1.5 0 1 0-1.5 0V4.5H5.75V6h1.5v7.45A5.5 5.5 0 0 1 2.5 8zM8 1.5a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1"/>
+    </svg>
+  )
+}
+export function SpiderIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M256 176a64 64 0 1 0 0 128 64 64 0 0 0 0-128zM112 96l-64-32-16 48 80 48 32 48-96 16v48l96 16-32 48-80 48 16 48 64-32 48-64h32l48 64 64 32 16-48-80-48-32-48 96-16v-48l-96-16 32-48 80-48-16-48-64 32-48 64h-32l-48-64z"/>
+    </svg>
+  )
+}
+export function WolfIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M128 32l32 96-96 32 64 48-48 80 96 16 32 80 48-48 48 48 32-80 96-16-48-80 64-48-96-32 32-96-96 64h-64zm80 160a24 24 0 1 1 0 48 24 24 0 0 1 0-48zm96 0a24 24 0 1 1 0 48 24 24 0 0 1 0-48zm-48 96l24 40h-48z"/>
+    </svg>
+  )
+}
+export function BowIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M464 48l-48 16-16 48-224 224-48-16-16 48 32 32-80 80 24 24 80-80 32 32 48-16-16-48L464 144l48-16zM192 320l-32-32 192-192 32 32z"/>
+    </svg>
+  )
+}
+export function AxeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M320 32c-96 0-160 48-192 128 64-32 128-16 160 32l-208 256 48 32 192-240c48 16 96 0 112-64-32 16-64 0-80-32 48-48 16-128-32-140z"/>
+    </svg>
+  )
+}
+export function HelmetIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M256 48C149 48 64 133 64 240v80h80v-64h32v64h32v-64h32v64h32v-64h32v64h32v-64h32v64h80v-80C448 133 363 48 256 48zM64 352v32a64 64 0 0 0 64 64h256a64 64 0 0 0 64-64v-32z"/>
+    </svg>
+  )
+}
+export function RingIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M256 64l-48 80h96zm0 128c-88 0-160 58-160 160s72 96 160 96 160-32 160-96-72-160-160-160zm0 64a96 96 0 1 1 0 192 96 96 0 0 1 0-192z"/>
+    </svg>
+  )
+}
+export function WandIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M352 32l-24 56-56 24 56 24 24 56 24-56 56-24-56-24zM96 160l-32 32 224 224 32-32zm48 32l176 176-16 16-176-176z"/>
+    </svg>
+  )
+}
+export function CauldronIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M224 32v48h-48l32 48h-80v64H64v32h32l32 192c0 32 64 64 128 64s128-32 128-64l32-192h32v-32h-64v-64h-80l32-48h-48V32zM96 256h320l-8 48H104z"/>
+    </svg>
+  )
+}
+export function MugIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M2 2v11a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm8 2h2a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-2zM3 1h6a1 1 0 0 1 0 0z"/>
+    </svg>
+  )
+}
+export function MountainIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M6 2.5 2.5 9 1 12h14l-1.5-3-2.5-5-2 4-1.5-2.5zm0 2.2 1 1.6L8.8 9H4.2z"/>
+    </svg>
+  )
+}
+export function SnakeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 512 512" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path fill="currentColor" d="M384 64c-53 0-96 43-96 96v32a64 64 0 0 1-64 64H96a96 96 0 0 0 0 192h32v-64H96a32 32 0 0 1 0-64h128a128 128 0 0 0 128-128v-32a32 32 0 0 1 64 0v32h64v-32c0-53-43-96-96-96zm32 64a16 16 0 1 1 0 32 16 16 0 0 1 0-32zM160 384v64l64 32v-64z"/>
+    </svg>
+  )
+}
+
 export function ElfIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg

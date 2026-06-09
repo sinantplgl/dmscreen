@@ -3,11 +3,14 @@ import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
 import { sectionsFor } from './sections'
+import { baseTypeOf } from './helpers'
 import type { SessionNode } from '../../types'
 
 export function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (id: string) => void }) {
   const bestiary = useStore((s) => s.bestiary)
   const updateNode = useStore((s) => s.updateNode)
+  const customNodeTypes = useStore((s) => s.customNodeTypes)
+  const base = baseTypeOf(node.type, customNodeTypes)
   const creature = node.creatureId ? bestiary.find((b) => b.id === node.creatureId) : undefined
   const [editingNote, setEditingNote] = useState(false)
 
@@ -38,7 +41,7 @@ export function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (i
           <div className="node-empty">No notes. Click ✎ to edit.</div>
         )}
       </div>
-      {node.type === 'statblock' && (
+      {base === 'statblock' && (
         <div className="self-card">
           <div className="self-card-head">
             <span className="self-card-title">Stat Block</span>
@@ -54,7 +57,7 @@ export function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (i
           )}
         </div>
       )}
-      {node.type === 'image' && (
+      {base === 'image' && (
         <div className="self-card">
           <div className="self-card-head">
             <span className="self-card-title">Image</span>
@@ -70,7 +73,7 @@ export function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (i
           )}
         </div>
       )}
-      {sectionsFor(node.type).map(({ key, Component }) => (
+      {sectionsFor(base).map(({ key, Component }) => (
         <div className="self-card" key={key}>
           <Component node={node} resizable={false} />
         </div>

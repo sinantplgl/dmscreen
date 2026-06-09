@@ -1,6 +1,6 @@
 import { useState, Fragment } from 'react'
 import type { SessionNode } from '../../types'
-import { childrenOf, siblingNumbers, iconFor, displayTitle } from './helpers'
+import { childrenOf, siblingNumbers, iconFor, displayTitle, nodeNumber } from './helpers'
 
 export function Breadcrumb({
   focusId,
@@ -36,7 +36,7 @@ export function Breadcrumb({
                 title="Focus this node"
                 onClick={() => { setFocus(n.id); setMenuFor(null) }}
               >
-                {iconFor(n)} {displayTitle(n)}
+                {iconFor(n)} <span className="muted">{nodeNumber(nodes, n)}.</span> {displayTitle(n)}
               </button>
               {hasMenu && (
                 <button

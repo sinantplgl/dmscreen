@@ -4,10 +4,11 @@ import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
 import { NodeChildren } from './NodeChildren'
+import { TypePicker } from './TypePicker'
 import { sectionsFor } from './sections'
 import type { SessionNode } from '../../types'
 import { EyeIcon, EyeSlashIcon, LinkIcon } from '../../components/icons'
-import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber } from './helpers'
+import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber, baseTypeOf } from './helpers'
 import { CardSettingsMenu, DEFAULT_CARD_FONT } from './CardSettingsMenu'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
 
@@ -41,8 +42,10 @@ export function NodeCard({
   const bestiary = useStore((s) => s.bestiary)
   const updateNode = useStore((s) => s.updateNode)
   const removeNode = useStore((s) => s.removeNode)
+  const customNodeTypes = useStore((s) => s.customNodeTypes)
   const [editing, setEditing] = useState(false)
-  const hidden = isHidden(node)
+  const customTypeNames = new Set(customNodeTypes.map((t) => t.type))
+  const hidden = isHidden(node, customTypeNames)
   const fontSize = settings.fontSize ?? DEFAULT_CARD_FONT
   const contentCols = settings.contentCols ?? 1
   const bodyStyle = { ['--ref-font-size' as string]: `${fontSize}px` }
@@ -51,7 +54,8 @@ export function NodeCard({
   // is false (alias cards), it's always read-only.
   const notesContent = (n: SessionNode, editable: boolean): ReactNode => {
     const creature = n.creatureId ? bestiary.find((b) => b.id === n.creatureId) : undefined
-    if (n.type === 'statblock') {
+    const base = baseTypeOf(n.type, customNodeTypes)
+    if (base === 'statblock') {
       return creature ? (
         <StatBlock creature={creature} />
       ) : editable ? (
@@ -62,7 +66,7 @@ export function NodeCard({
         <div className="node-empty">No creature linked.</div>
       )
     }
-    if (n.type === 'image') {
+    if (base === 'image') {
       if (editable && (editing || !n.imageUrl)) {
         return (
           <input
@@ -106,7 +110,7 @@ export function NodeCard({
       <div className="node-card-notes" style={bodyStyle}>
         {notesContent(content, editable)}
       </div>
-      {sectionsFor(content.type).map(({ key, Component }) => (
+      {sectionsFor(baseTypeOf(content.type, customNodeTypes)).map(({ key, Component }) => (
         <Component
           key={key}
           node={content}
@@ -136,7 +140,8 @@ export function NodeCard({
         </div>
       )
     }
-    const targetLeaf = isLeafType(target.type)
+    const targetBase = baseTypeOf(target.type, customNodeTypes)
+    const targetLeaf = isLeafType(targetBase)
     return (
       <div className={'node-card alias' + (targetLeaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
         <div className="node-card-head">
@@ -160,7 +165,7 @@ export function NodeCard({
             <CardSettingsMenu
               settings={settings}
               onSettings={onSettings}
-              allowColumns={target.type !== 'statblock' && target.type !== 'image'}
+              allowColumns={targetBase !== 'statblock' && targetBase !== 'image'}
             />
           )}
           <button className="icon-btn danger" title="Remove alias" onClick={() => removeNode(node.id)}>✕</button>
@@ -170,15 +175,14 @@ export function NodeCard({
     )
   }
 
-  const leaf = isLeafType(node.type)
+  const nodeBase = baseTypeOf(node.type, customNodeTypes)
+  const leaf = isLeafType(nodeBase)
 
   return (
     <div className={'node-card' + (leaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
       <div className="node-card-head">
         <span className="drag-grip" title="Drag to move">⠿</span>
-        <span className="node-type-icon" title={node.type}>
-          {iconFor(node)}
-        </span>
+        <TypePicker node={node} />
         {num != null && <span className="node-card-num">{num}</span>}
         <input
           className="node-title"
@@ -187,7 +191,7 @@ export function NodeCard({
           onChange={(e) => updateNode(node.id, { title: e.target.value })}
         />
         <span className="spacer" />
-        {node.type === 'statblock' ? (
+        {nodeBase === 'statblock' ? (
           <button className="icon-btn" title="Link creature" onClick={() => onPick(node.id)}>
             <LinkIcon />
           </button>
@@ -213,7 +217,7 @@ export function NodeCard({
           <CardSettingsMenu
             settings={settings}
             onSettings={onSettings}
-            allowColumns={node.type !== 'statblock' && node.type !== 'image'}
+            allowColumns={nodeBase !== 'statblock' && nodeBase !== 'image'}
           />
         )}
         <button

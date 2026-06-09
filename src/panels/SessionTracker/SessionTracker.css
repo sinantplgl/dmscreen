@@ -374,30 +374,111 @@
 }
 .node-empty { color: #9c8f7d; font-style: italic; font-size: 13px; }
 
-/* type popover */
-.node-type-popover {
+/* ── Type picker dropdown (tree + board) ── */
+.type-menu {
+  position: fixed;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 248px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 5px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+}
+.type-menu-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  padding: 6px 4px 2px;
+}
+.type-menu-title:first-child { padding-top: 2px; }
+.type-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 4px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.type-menu-item:hover { background: var(--surface); color: var(--gold); }
+.type-menu-item.current { color: var(--gold); }
+.type-menu-item .node-type-icon { font-size: 15px; cursor: pointer; }
+/* custom rows wrap a pick button + a delete button */
+.type-menu-item:has(.type-menu-pick) { padding: 0; gap: 0; }
+.type-menu-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  padding: 4px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.type-menu-item .type-del { font-size: 13px; opacity: 0.6; }
+.type-menu-item:hover .type-del { opacity: 1; }
+
+.type-create { display: flex; flex-direction: column; gap: 6px; padding: 4px; }
+.type-create input { width: 100%; box-sizing: border-box; }
+.type-icon-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
-  align-items: center;
-  padding: 5px 8px;
-  margin-bottom: 4px;
-  background: var(--surface);
+  max-height: 132px;
+  overflow-y: auto;
+  padding: 2px;
   border: 1px solid var(--border);
   border-radius: 4px;
-}
-.type-preset {
   background: var(--card2);
+}
+.type-icon-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  font-size: 16px;
+  background: var(--surface);
   border: 1px solid var(--border);
-  color: var(--text);
   border-radius: 3px;
-  padding: 3px 9px;
-  font-size: 13px;
+  color: var(--text);
   cursor: pointer;
 }
-.type-preset:hover { border-color: var(--accent); color: var(--gold); }
-.type-custom { display: flex; gap: 4px; margin-left: auto; }
-.type-custom input { width: 110px; }
+.type-icon-choice:hover { border-color: var(--accent); color: var(--gold); }
+.type-icon-choice.selected { border-color: var(--accent); color: var(--gold); background: color-mix(in srgb, var(--accent) 20%, var(--surface)); }
+.type-create-row { display: flex; gap: 6px; align-items: center; }
+.type-create-row .type-emoji { flex: 1; }
+.type-base-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.type-base-select select { flex: 1; }
+.type-base {
+  margin-left: auto;
+  font-size: 11px;
+  font-style: italic;
+}
 
 /* creature picker modal list */
 .creature-pick-list {

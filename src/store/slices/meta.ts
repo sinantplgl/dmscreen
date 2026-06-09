@@ -34,6 +34,7 @@ export const createMetaSlice: Slice<MetaActions> = (set, get) => ({
       bestiary: s.bestiary,
       items: s.items,
       tables: s.tables,
+      customNodeTypes: s.customNodeTypes,
       ddbCobalt: '',
     }
     return JSON.stringify(data, null, 2)
@@ -53,6 +54,7 @@ export const createMetaSlice: Slice<MetaActions> = (set, get) => ({
         campaigns,
         activeCampaignId,
         inactiveCampaigns: data.inactiveCampaigns ?? {},
+        customNodeTypes: data.customNodeTypes ?? [],
         ddbCobalt: s.ddbCobalt,
       }
     }),

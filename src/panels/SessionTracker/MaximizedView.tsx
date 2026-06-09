@@ -40,10 +40,11 @@ export function MaximizedView({
   toggleChildren: (id: string) => void
 }) {
   const updateNode = useStore((s) => s.updateNode)
+  const customTypeNames = new Set(useStore((s) => s.customNodeTypes).map((t) => t.type))
   const activeId = stack[stack.length - 1]
   const active = nodes.find((n) => n.id === activeId)
   const childNums = siblingNumbers(childrenOf(nodes, activeId))
-  const children = childrenOf(nodes, activeId).filter((n) => !isHidden(n))
+  const children = childrenOf(nodes, activeId).filter((n) => !isHidden(n, customTypeNames))
 
   const maximize = (id: string) => setStack([...stack, id])
   const minimize = () => setStack(stack.slice(0, -1))

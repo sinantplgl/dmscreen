@@ -2,8 +2,8 @@ import { useState } from 'react'
 import type { DragEvent } from 'react'
 import { useStore } from '../../store/store'
 import type { SessionNode } from '../../types'
+import { TypePicker } from './TypePicker'
 import {
-  NODE_TYPE_PRESETS,
   NODE_MIME,
   type DropZone,
   draggingNodeId,
@@ -72,7 +72,6 @@ export function NodeRow({
   const kids = isAlias ? [] : childrenOf(nodes, node.id)
   const kidNums = siblingNumbers(kids)
   const isCollapsed = !!collapsed[node.id]
-  const [typeOpen, setTypeOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [dropZone, setDropZone] = useState<DropZone | null>(null)
   const indent = depth * 16
@@ -171,9 +170,7 @@ export function NodeRow({
           )
         ) : (
           <>
-            <span className="node-type-icon" title={node.type + ' — click to change'} onClick={() => setTypeOpen((v) => !v)}>
-              {iconFor(node)}
-            </span>
+            <TypePicker node={node} />
             <NumberPrefix node={node} num={num} />
             <input
               className="node-title"
@@ -206,47 +203,6 @@ export function NodeRow({
           </button>
         </div>
       </div>
-
-      {!isAlias && typeOpen && (
-        <div className="node-type-popover" style={{ marginLeft: indent + 22 }}>
-          {NODE_TYPE_PRESETS.map((p) => (
-            <button
-              key={p.type}
-              className="type-preset"
-              onClick={() => {
-                updateNode(node.id, { type: p.type, icon: undefined })
-                setTypeOpen(false)
-              }}
-            >
-              <p.Icon /> {p.type}
-            </button>
-          ))}
-          <div className="type-custom">
-            <input
-              placeholder="custom type"
-              defaultValue={node.type}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  updateNode(node.id, { type: (e.target as HTMLInputElement).value.trim() || node.type })
-                  setTypeOpen(false)
-                }
-              }}
-            />
-            <input
-              placeholder="icon"
-              title="Custom icon — type any emoji or character to override the built-in icon. Leave blank to use the default."
-              defaultValue={node.icon || ''}
-              style={{ width: 64 }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  updateNode(node.id, { icon: (e.target as HTMLInputElement).value.trim() || undefined })
-                  setTypeOpen(false)
-                }
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {!isAlias && !isCollapsed &&
         kids.map((k) => (

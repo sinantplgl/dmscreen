@@ -287,6 +287,7 @@ export function makeDefaultData(): AppData {
       },
     ],
     tables: REFERENCE_TABLES,
+    customNodeTypes: [],
     sessionNodes: [
       {
         id: 'sn_session',

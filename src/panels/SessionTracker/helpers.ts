@@ -1,6 +1,6 @@
 import { createElement } from 'react'
 import type { ComponentType, ReactNode } from 'react'
-import type { SessionNode } from '../../types'
+import type { CustomNodeType, SessionNode } from '../../types'
 import {
   BookIcon,
   ScrollIcon,
@@ -16,6 +16,38 @@ import {
   NoteIcon,
   ChartIcon,
   ImageIcon,
+  ShieldIcon,
+  DragonIcon,
+  CompassIcon,
+  GlobeIcon,
+  CastleIcon,
+  ElfIcon,
+  SparklesIcon,
+  LightningIcon,
+  TrapIcon,
+  PotionIcon,
+  KeyIcon,
+  CrownIcon,
+  SkullIcon,
+  ChestIcon,
+  CoinsIcon,
+  TorchIcon,
+  BannerIcon,
+  TowerIcon,
+  TreeIcon,
+  ShipIcon,
+  AnchorIcon,
+  SpiderIcon,
+  WolfIcon,
+  BowIcon,
+  AxeIcon,
+  HelmetIcon,
+  RingIcon,
+  WandIcon,
+  CauldronIcon,
+  MugIcon,
+  MountainIcon,
+  SnakeIcon,
 } from '../../components/icons'
 
 export const NODE_TYPE_PRESETS: { type: string; Icon: ComponentType }[] = [
@@ -39,26 +71,125 @@ export const PRESET_ICON: Record<string, ComponentType> = Object.fromEntries(
   NODE_TYPE_PRESETS.map((p) => [p.type, p.Icon]),
 )
 
+/** Named, pickable icon set for custom types. A superset of the preset icons plus
+ *  extra fantasy glyphs. Keys are stable lowercase identifiers stored on `node.icon`. */
+export const ICON_LIBRARY: { key: string; Icon: ComponentType }[] = [
+  { key: 'scroll', Icon: ScrollIcon },
+  { key: 'book', Icon: BookIcon },
+  { key: 'sword', Icon: SwordIcon },
+  { key: 'swords', Icon: SwordsIcon },
+  { key: 'film', Icon: FilmIcon },
+  { key: 'map', Icon: MapIcon },
+  { key: 'door', Icon: DoorIcon },
+  { key: 'mage', Icon: MageIcon },
+  { key: 'gem', Icon: GemIcon },
+  { key: 'hook', Icon: HookIcon },
+  { key: 'music', Icon: MusicIcon },
+  { key: 'note', Icon: NoteIcon },
+  { key: 'chart', Icon: ChartIcon },
+  { key: 'image', Icon: ImageIcon },
+  { key: 'shield', Icon: ShieldIcon },
+  { key: 'dragon', Icon: DragonIcon },
+  { key: 'compass', Icon: CompassIcon },
+  { key: 'globe', Icon: GlobeIcon },
+  { key: 'castle', Icon: CastleIcon },
+  { key: 'elf', Icon: ElfIcon },
+  { key: 'sparkles', Icon: SparklesIcon },
+  { key: 'lightning', Icon: LightningIcon },
+  { key: 'trap', Icon: TrapIcon },
+  { key: 'potion', Icon: PotionIcon },
+  { key: 'key', Icon: KeyIcon },
+  { key: 'crown', Icon: CrownIcon },
+  { key: 'skull', Icon: SkullIcon },
+  { key: 'chest', Icon: ChestIcon },
+  { key: 'coins', Icon: CoinsIcon },
+  { key: 'torch', Icon: TorchIcon },
+  { key: 'banner', Icon: BannerIcon },
+  { key: 'tower', Icon: TowerIcon },
+  { key: 'tree', Icon: TreeIcon },
+  { key: 'ship', Icon: ShipIcon },
+  { key: 'anchor', Icon: AnchorIcon },
+  { key: 'spider', Icon: SpiderIcon },
+  { key: 'wolf', Icon: WolfIcon },
+  { key: 'bow', Icon: BowIcon },
+  { key: 'axe', Icon: AxeIcon },
+  { key: 'helmet', Icon: HelmetIcon },
+  { key: 'ring', Icon: RingIcon },
+  { key: 'wand', Icon: WandIcon },
+  { key: 'cauldron', Icon: CauldronIcon },
+  { key: 'mug', Icon: MugIcon },
+  { key: 'mountain', Icon: MountainIcon },
+  { key: 'snake', Icon: SnakeIcon },
+]
+
+export const ICON_BY_KEY: Record<string, ComponentType> = Object.fromEntries(
+  ICON_LIBRARY.map((i) => [i.key, i.Icon]),
+)
+
 export function iconFor(n: SessionNode): ReactNode {
-  if (n.icon) return n.icon
+  if (n.icon) {
+    const Icon = ICON_BY_KEY[n.icon]
+    return Icon ? createElement(Icon) : n.icon // library key → SVG; else a literal emoji/char
+  }
   const Icon = PRESET_ICON[n.type]
   return Icon ? createElement(Icon) : '•'
+}
+
+/** Resolve a node type to the built-in type whose behavior it should use. Custom
+ *  types return their `base` (default 'note'); built-in types return themselves. */
+export const baseTypeOf = (type: string, customTypes: CustomNodeType[]): string => {
+  const ct = customTypes.find((t) => t.type === type)
+  return ct ? ct.base ?? 'note' : type
 }
 
 export const isLeafType = (type: string) =>
   type === 'note' || type === 'statblock' || type === 'image' || type === 'item' || type === "npc"
 
-export const showsByDefault = (type: string) => isLeafType(type)
+// Built-in leaf types, plus any user-defined custom type, show on the board by default.
+export const showsByDefault = (type: string, customTypes?: Set<string>) =>
+  isLeafType(type) || (customTypes?.has(type) ?? false)
 
 // Refs are shown by default (a reference almost always carries something worth
 // seeing here); other nodes follow their type default. `hidden` is per-node, so a
 // ref's visibility here is independent of the original node's visibility at home.
-export const isHidden = (n: SessionNode) => n.hidden ?? (n.refId ? false : !showsByDefault(n.type))
+export const isHidden = (n: SessionNode, customTypes?: Set<string>) =>
+  n.hidden ?? (n.refId ? false : !showsByDefault(n.type, customTypes))
 
 export const childrenOf = (nodes: SessionNode[], parentId: string | undefined) =>
   nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.order - b.order)
 
 export const placeholderFor = (n: SessionNode) => `New ${n.type}`
+
+/** Where a (shared) custom type is used, grouped by campaign — used to warn before
+ *  deleting it. Scans the active campaign's nodes plus every inactive campaign snapshot. */
+export interface TypeUsageGroup { campaignId: string; campaignName: string; titles: string[]; count: number }
+export function customTypeUsage(
+  type: string,
+  activeNodes: SessionNode[],
+  activeCampaignId: string,
+  campaigns: { id: string; name: string }[],
+  inactiveCampaigns: Record<string, { sessionNodes: SessionNode[] }>,
+): TypeUsageGroup[] {
+  const nameOf = (id: string) => campaigns.find((c) => c.id === id)?.name ?? 'Unknown campaign'
+  const scan = (campaignId: string, nodes: SessionNode[]): TypeUsageGroup | null => {
+    const hits = nodes.filter((n) => !n.refId && n.type === type)
+    if (hits.length === 0) return null
+    return {
+      campaignId,
+      campaignName: nameOf(campaignId),
+      titles: hits.map((n) => (n.title.trim() ? n.title : placeholderFor(n))),
+      count: hits.length,
+    }
+  }
+  const groups: TypeUsageGroup[] = []
+  const active = scan(activeCampaignId, activeNodes)
+  if (active) groups.push(active)
+  for (const [id, cs] of Object.entries(inactiveCampaigns)) {
+    const g = scan(id, cs.sessionNodes ?? [])
+    if (g) groups.push(g)
+  }
+  return groups
+}
 
 export function displayTitle(n: SessionNode): ReactNode {
   return n.title.trim() ? n.title : createElement('span', { className: 'muted' }, placeholderFor(n))

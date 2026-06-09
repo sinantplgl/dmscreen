@@ -25,6 +25,8 @@ export function SessionTracker({
   const addNode = useStore((s) => s.addNode)
   const addAlias = useStore((s) => s.addAlias)
   const updateNode = useStore((s) => s.updateNode)
+  const customNodeTypes = useStore((s) => s.customNodeTypes)
+  const customTypeNames = new Set(customNodeTypes.map((t) => t.type))
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const [refPickerParent, setRefPickerParent] = useState<string | undefined | null>(null)
   const [maxStack, setMaxStack] = useState<string[]>([])
@@ -69,15 +71,18 @@ export function SessionTracker({
     setFocus(focusSiblings[(i + dir + focusSiblings.length) % focusSiblings.length].id)
   }
 
-  const boardItems = showHidden ? roots : roots.filter((n) => !isHidden(n))
-  const hiddenCount = roots.filter((n) => isHidden(n)).length
+  const boardItems = showHidden ? roots : roots.filter((n) => !isHidden(n, customTypeNames))
+  const hiddenCount = roots.filter((n) => isHidden(n, customTypeNames)).length
+
+  // Position a freshly-added card at the bottom of the board so it's visible.
+  const placeOnBoard = (id: string) => {
+    const bottomY = roots.reduce((m, n) => Math.max(m, (n.layout?.y ?? 0) + (n.layout?.h ?? 0)), 0)
+    updateNode(id, { layout: { x: 0, y: bottomY, w: Math.min(6, boardCols), h: 6 }, hidden: false })
+  }
 
   const addHere = () => {
     const id = addNode(focusId, atTop ? 'session' : 'note')
-    if (view === 'board') {
-      const bottomY = roots.reduce((m, n) => Math.max(m, (n.layout?.y ?? 0) + (n.layout?.h ?? 0)), 0)
-      updateNode(id, { layout: { x: 0, y: bottomY, w: Math.min(6, boardCols), h: 6 }, hidden: false })
-    }
+    if (view === 'board') placeOnBoard(id)
   }
 
   const [query, setQuery] = useState('')
@@ -118,15 +123,13 @@ export function SessionTracker({
           >
             {view === 'board' ? '+ Card' : '+ Node'}
           </button>
-          {view === 'tree' && (
-            <button
-              className="btn"
-              title="Add a reference alias to an existing node"
-              onClick={() => setRefPickerParent(focusId ?? undefined)}
-            >
-              + Ref
-            </button>
-          )}
+          <button
+            className="btn"
+            title="Add a reference alias to an existing node"
+            onClick={() => setRefPickerParent(focusId ?? undefined)}
+          >
+            + Ref
+          </button>
           <span className="view-toggle">
             <button
               className={'btn' + (view === 'tree' ? ' btn-accent' : '')}
@@ -283,6 +286,7 @@ export function SessionTracker({
           nodes={nodes}
           onPick={(refId) => {
             const id = addAlias(refPickerParent, refId)
+            if (view === 'board' && refPickerParent === focusId) placeOnBoard(id)
             if (refPickerParent !== undefined) expand(refPickerParent)
             setHighlightId(id)
           }}

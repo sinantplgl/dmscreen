@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
-import type { SessionNode } from '../../types'
+import type { CampaignState, SessionNode } from '../../types'
 import { uid } from '../../lib/dnd'
+import { NODE_TYPE_PRESETS } from '../../panels/SessionTracker/helpers'
 import type { Store } from '../store'
 
 type Slice<T> = StateCreator<Store, [['zustand/persist', unknown]], [], T>
@@ -55,7 +56,13 @@ export interface SessionActions {
   outdentNode: (id: string) => void
   /** Reparent `id` under `newParentId`, placing it before `beforeId` (append if absent). */
   moveNode: (id: string, newParentId: string | undefined, beforeId?: string) => void
+  /** Register (or update) a shared custom node type that extends a built-in `base`. */
+  addCustomNodeType: (type: string, icon?: string, base?: string) => void
+  /** Remove a custom node type and reset every node using it (in ALL campaigns) to its base. */
+  removeCustomNodeType: (type: string) => void
 }
+
+const BUILTIN_TYPES = new Set(NODE_TYPE_PRESETS.map((p) => p.type))
 
 export const createSessionSlice: Slice<SessionActions> = (set) => ({
   addNode: (parentId, type) => {
@@ -157,5 +164,33 @@ export const createSessionSlice: Slice<SessionActions> = (set) => ({
       })
       if (oldParentId !== newParentId) nodes = normalizeOrders(nodes, oldParentId)
       return { sessionNodes: nodes }
+    }),
+
+  addCustomNodeType: (type, icon, base) =>
+    set((s) => {
+      const name = type.trim()
+      if (!name || BUILTIN_TYPES.has(name)) return s
+      const entry = { type: name, icon, base: base || 'note' }
+      const existing = s.customNodeTypes.findIndex((t) => t.type === name)
+      const next = [...s.customNodeTypes]
+      if (existing >= 0) next[existing] = entry
+      else next.push(entry)
+      return { customNodeTypes: next }
+    }),
+
+  removeCustomNodeType: (type) =>
+    set((s) => {
+      const fallback = s.customNodeTypes.find((t) => t.type === type)?.base ?? 'note'
+      const reset = (n: SessionNode): SessionNode =>
+        !n.refId && n.type === type ? { ...n, type: fallback, icon: undefined } : n
+      const inactiveCampaigns: Record<string, CampaignState> = {}
+      for (const [id, cs] of Object.entries(s.inactiveCampaigns)) {
+        inactiveCampaigns[id] = { ...cs, sessionNodes: cs.sessionNodes.map(reset) }
+      }
+      return {
+        customNodeTypes: s.customNodeTypes.filter((t) => t.type !== type),
+        sessionNodes: s.sessionNodes.map(reset),
+        inactiveCampaigns,
+      }
     }),
 })

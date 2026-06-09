@@ -61,7 +61,7 @@ export const useStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 4,
+      version: 5,
       partialize: (s) => ({
         campaigns: s.campaigns,
         activeCampaignId: s.activeCampaignId,
@@ -79,6 +79,7 @@ export const useStore = create<Store>()(
         bestiary: s.bestiary,
         items: s.items,
         tables: s.tables,
+        customNodeTypes: s.customNodeTypes,
         ddbCobalt: s.ddbCobalt,
       }),
       migrate: (persisted: unknown, version: number) => {
@@ -111,6 +112,9 @@ export const useStore = create<Store>()(
         }
         if (version < 4 || !Array.isArray(state.items)) {
           state.items = (state.items as AppData['items']) ?? []
+        }
+        if (version < 5 || !Array.isArray(state.customNodeTypes)) {
+          state.customNodeTypes = (state.customNodeTypes as AppData['customNodeTypes']) ?? []
         }
         return state as unknown as AppData
       },

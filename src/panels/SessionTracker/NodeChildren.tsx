@@ -19,8 +19,9 @@ export function NodeChildren({
   maximize: (id: string) => void
 }) {
   const nodes = useStore((s) => s.sessionNodes)
+  const customTypeNames = new Set(useStore((s) => s.customNodeTypes).map((t) => t.type))
   const nums = siblingNumbers(childrenOf(nodes, node.id))
-  const kids = childrenOf(nodes, node.id).filter((n) => !isHidden(n))
+  const kids = childrenOf(nodes, node.id).filter((n) => !isHidden(n, customTypeNames))
   if (kids.length === 0) return null
 
   return (

@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store/store'
 import { Board } from '../../components/Board'
-import { EyeIcon, EyeSlashIcon } from '../../components/icons'
+import { ListIcon, GridIcon } from '../../components/icons'
 import { childrenOf, siblingNumbers, isHidden } from './helpers'
 import { Breadcrumb } from './Breadcrumb'
 import { SearchBox } from './SearchBox'
 import { NodeRow } from './NodeRow'
 import { NodeCard } from './NodeCard'
 import { FocusedContent } from './FocusedContent'
-import { ChildVisibility } from './ChildVisibility'
+import { AddMenu } from './AddMenu'
+import { BoardOptionsMenu } from './BoardOptionsMenu'
 import { MaximizedView } from './MaximizedView'
 import { CreaturePicker, ReferencePicker } from './pickers'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
@@ -116,57 +117,36 @@ export function SessionTracker({
       <div className="session-head">
         <Breadcrumb focusId={focusId} nodes={nodes} setFocus={setFocus} />
         <div className="flex-row" style={{ gap: 6, marginTop: 6 }}>
-          <button
-            className="btn btn-accent"
-            onClick={addHere}
-            title={view === 'board' ? 'Add a card' : 'Add a child node'}
-          >
-            {view === 'board' ? '+ Card' : '+ Node'}
-          </button>
-          <button
-            className="btn"
-            title="Add a reference alias to an existing node"
-            onClick={() => setRefPickerParent(focusId ?? undefined)}
-          >
-            + Ref
-          </button>
+          <AddMenu
+            view={view}
+            onAddHere={addHere}
+            onAddRef={() => setRefPickerParent(focusId ?? undefined)}
+          />
           <span className="view-toggle">
             <button
               className={'btn' + (view === 'tree' ? ' btn-accent' : '')}
+              title="Tree view"
               onClick={() => onConfig({ view: 'tree' })}
             >
-              Tree
+              <ListIcon />
             </button>
             <button
               className={'btn' + (view === 'board' ? ' btn-accent' : '')}
+              title="Board view"
               onClick={() => onConfig({ view: 'board' })}
             >
-              Board
+              <GridIcon />
             </button>
           </span>
           {view === 'board' && (
-            <>
-              <label className="ref-cols-ctl" title="Board columns — fewer = larger cards">
-                Cols
-                <input
-                  type="number"
-                  min={1}
-                  max={24}
-                  value={boardCols}
-                  onChange={(e) =>
-                    onConfig({ boardCols: Math.max(1, Math.min(24, parseInt(e.target.value) || 12)) })
-                  }
-                />
-              </label>
-              <button
-                className={'btn' + (showHidden ? ' btn-accent' : '')}
-                title="Reveal cards hidden from the board"
-                onClick={() => onConfig({ showHidden: !showHidden })}
-              >
-                {showHidden ? <><EyeIcon /> Hidden</> : <><EyeSlashIcon />{` Hidden${hiddenCount ? ` (${hiddenCount})` : ''}`}</>}
-              </button>
-              <ChildVisibility children={roots} />
-            </>
+            <BoardOptionsMenu
+              children={roots}
+              boardCols={boardCols}
+              onCols={(cols) => onConfig({ boardCols: cols })}
+              showHidden={showHidden}
+              onToggleHidden={() => onConfig({ showHidden: !showHidden })}
+              hiddenCount={hiddenCount}
+            />
           )}
           <span className="spacer" />
           <span className="session-step">
@@ -176,7 +156,7 @@ export function SessionTracker({
               disabled={atTop}
               onClick={() => setFocus(focusNode?.parentId)}
             >
-              ↑ Up
+              ↑
             </button>
             <button
               className="btn"
@@ -184,7 +164,7 @@ export function SessionTracker({
               disabled={!canCycle}
               onClick={() => cycleSibling(-1)}
             >
-              ◀ Prev
+              ◀
             </button>
             <button
               className="btn"
@@ -192,7 +172,7 @@ export function SessionTracker({
               disabled={!canCycle}
               onClick={() => cycleSibling(1)}
             >
-              Next ▶
+              ▶
             </button>
           </span>
         </div>
@@ -223,8 +203,8 @@ export function SessionTracker({
             {boardItems.length === 0 ? (
               <div className="empty-hint">
                 {roots.length === 0
-                  ? 'No child cards yet — click "+ Card" to add one.'
-                  : `All ${hiddenCount} card(s) hidden — click the "Hidden" toggle to reveal.`}
+                  ? 'No child cards yet — click "+ Add" to add one.'
+                  : `All ${hiddenCount} card(s) hidden — open the filter menu to reveal them.`}
               </div>
             ) : (
               <Board
@@ -259,7 +239,7 @@ export function SessionTracker({
           </>
         ) : roots.length === 0 ? (
           <div className="empty-hint">
-            Nothing here yet. Click "+ Node".
+            Nothing here yet. Click "+ Add".
           </div>
         ) : (
           roots.map((n) => (

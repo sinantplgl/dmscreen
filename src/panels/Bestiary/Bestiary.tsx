@@ -7,6 +7,7 @@ import { CreatureEditModal, AddCreatureModal } from './BestiaryModals'
 
 export function Bestiary() {
   const bestiary = useStore((s) => s.bestiary).sort()
+  const combatants = useStore((s) => s.combatants)
   const sendToCombat = useStore((s) => s.sendCreatureToCombat)
   const [search, setSearch] = useState('')
   const [adding, setAdding] = useState(false)
@@ -34,6 +35,8 @@ export function Bestiary() {
 
       {filtered.map((c) => {
         const open = openId === c.id
+        const inCombat = combatants.some((cb) => cb.creatureId === c.id)
+        const blockedUnique = !!c.unique && inCombat
         return (
           <div key={c.id} style={{ marginBottom: 10 }}>
             <div className="flex-row" style={{ marginBottom: 4 }}>
@@ -45,10 +48,15 @@ export function Bestiary() {
                 {open ? '▾' : '▸'} {c.name}
                 <span className="muted" style={{ fontStyle: 'italic' }}>
                   {' '}
-                  — {c.cr.split(' ')[0]} CR
+                  — {c.cr.split(' ')[0]} CR{c.unique ? ' · unique' : ''}
                 </span>
               </button>
-              <button className="btn btn-sm" onClick={() => sendToCombat(c.id)} title="Add to combat">
+              <button
+                className="btn btn-sm"
+                onClick={() => sendToCombat(c.id)}
+                disabled={blockedUnique}
+                title={blockedUnique ? 'Unique creature already in combat' : 'Add to combat'}
+              >
                 <SwordsIcon />
               </button>
               <button className="btn btn-sm" onClick={() => setEditId(c.id)} title="Edit">

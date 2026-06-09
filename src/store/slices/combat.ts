@@ -1,9 +1,32 @@
 import type { StateCreator } from 'zustand'
-import type { Combatant } from '../../types'
+import type { Combatant, Creature } from '../../types'
 import { uid } from '../../lib/dnd'
 import type { Store } from '../store'
 
 type Slice<T> = StateCreator<Store, [['zustand/persist', unknown]], [], T>
+
+/** Append one combatant built from a creature, renumbering same-named duplicates. */
+function spawnFromCreature(combatants: Combatant[], cr: Creature): Combatant[] {
+  const maxHp = parseInt(cr.hp, 10) || 10
+  const ac = parseInt(cr.ac, 10) || 10
+  const numbered = numberDuplicates(combatants, cr.name, false)
+  const combatant: Combatant = {
+    id: uid('cb'),
+    name: cr.name,
+    type: cr.meta.split(',')[0] || 'Monster',
+    init: 10,
+    hp: maxHp,
+    maxHp,
+    ac,
+    conditions: [],
+    isPlayer: false,
+    dupNumber: numbered.dupNumber,
+    portraitUrl: cr.imageUrl,
+    portraitFlip: cr.imageFlip,
+    creatureId: cr.id,
+  }
+  return [...numbered.combatants, combatant]
+}
 
 export function numberDuplicates(
   combatants: Combatant[],
@@ -31,7 +54,12 @@ export interface CombatActions {
   toggleCondition: (id: string, cond: string) => void
   reorderCombatant: (fromId: string, toId: string) => void
   sortByInit: () => void
+  /** Remove every combatant and reset the round/turn counters. */
+  clearCombatants: () => void
   sendCreatureToCombat: (creatureId: string) => void
+  /** Add several creatures at once (with per-entry counts), numbering duplicates
+   *  correctly across the whole batch. Used by encounter "Send all to combat". */
+  sendCreaturesToCombat: (entries: { creatureId: string; count: number }[]) => void
 }
 
 export const createCombatSlice: Slice<CombatActions> = (set) => ({
@@ -119,28 +147,31 @@ export const createCombatSlice: Slice<CombatActions> = (set) => ({
   sortByInit: () =>
     set((s) => ({ combatants: [...s.combatants].sort((a, b) => b.init - a.init), activeTurn: 0 })),
 
+  clearCombatants: () => set({ combatants: [], activeTurn: 0, round: 1 }),
+
   sendCreatureToCombat: (creatureId) =>
     set((s) => {
       const cr = s.bestiary.find((x) => x.id === creatureId)
       if (!cr) return s
-      const maxHp = parseInt(cr.hp, 10) || 10
-      const ac = parseInt(cr.ac, 10) || 10
-      const numbered = numberDuplicates(s.combatants, cr.name, false)
-      const combatant: Combatant = {
-        id: uid('cb'),
-        name: cr.name,
-        type: cr.meta.split(',')[0] || 'Monster',
-        init: 10,
-        hp: maxHp,
-        maxHp,
-        ac,
-        conditions: [],
-        isPlayer: false,
-        dupNumber: numbered.dupNumber,
-        portraitUrl: cr.imageUrl,
-        portraitFlip: cr.imageFlip,
-        creatureId,
+      // A unique creature can only be in combat once.
+      if (cr.unique && s.combatants.some((c) => c.creatureId === creatureId)) return s
+      return { combatants: spawnFromCreature(s.combatants, cr).sort((a, b) => b.init - a.init) }
+    }),
+
+  sendCreaturesToCombat: (entries) =>
+    set((s) => {
+      let combatants = s.combatants
+      for (const { creatureId, count } of entries) {
+        const cr = s.bestiary.find((x) => x.id === creatureId)
+        if (!cr) continue
+        const want = cr.unique
+          ? combatants.some((c) => c.creatureId === creatureId)
+            ? 0
+            : 1
+          : Math.max(1, count)
+        for (let i = 0; i < want; i++) combatants = spawnFromCreature(combatants, cr)
       }
-      return { combatants: [...numbered.combatants, combatant].sort((a, b) => b.init - a.init) }
+      if (combatants === s.combatants) return s
+      return { combatants: [...combatants].sort((a, b) => b.init - a.init) }
     }),
 })

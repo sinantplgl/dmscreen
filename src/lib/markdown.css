@@ -5,7 +5,7 @@
   color: inherit;
   font-size: var(--ref-font-size, 15px);
   line-height: 1.55;
-  font-weight: lighter;
+  font-weight: normal;
 }
 .markdown p {
   margin: 4px 0;
@@ -43,10 +43,14 @@
   font-style: italic;
 }
 .markdown a { color: var(--accent); text-decoration: underline; }
-.markdown strong { font-weight: 700; }
+/* Bold is differentiated by COLOR, not weight — at these sizes 700 vs 800 reads
+   identically, so bold gets an emphasis color (warm gold on dark chrome) and a
+   small weight bump. Parchment overrides --md-strong to the book's deep red. */
+.markdown strong { font-weight: 700; color: var(--md-strong, #e3b24c); }
 .markdown em { font-style: italic; }
 
-/* On the parchment book look, headings/links take the deep red accent. */
+/* On the parchment book look, headings/links/bold take the deep red accent. */
+.parchment { --md-strong: #58180d; }
 .parchment .markdown .md-h1,
 .parchment .markdown .md-h2,
 .parchment .markdown .md-h3 { color: #58180d; }

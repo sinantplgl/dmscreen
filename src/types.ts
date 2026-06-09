@@ -11,6 +11,7 @@ export type PanelType =
   | 'bestiary'
   | 'reference'
   | 'session'
+  | 'items'
   | 'webframe'
 
 export interface PanelInstance {
@@ -169,6 +170,9 @@ export interface Creature {
   imageUrl?: string
   /** Mirror the artwork horizontally (some art reads better facing the other way). */
   imageFlip?: boolean
+  /** A named/boss creature that can only exist once in play — adding it again
+   *  (to combat or an encounter) is prevented while one is already present. */
+  unique?: boolean
   /** 2024 initiative line, e.g. "+7 (17)". Optional — computed from DEX when empty. */
   initiative?: string
   hp: string // free text so "120 (16d10 + 32)" works
@@ -196,6 +200,21 @@ export interface Creature {
   /** 2024 Monster Manual footer lines. */
   habitat?: string
   treasure?: string
+}
+
+// ── Magic items (a reusable library, attachable to session `item` nodes) ────────
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary' | 'artifact'
+
+export interface Item {
+  id: string
+  name: string
+  /** e.g. "Wondrous Item", "Weapon", "Armor", "Potion", "Ring", "Scroll". */
+  itemType: string
+  rarity: ItemRarity
+  /** Requires attunement (the "(requires attunement)" tail of the type line). */
+  attunement?: boolean
+  description: string // markdown
+  imageUrl?: string
 }
 
 // ── Reference items (tables, notes, images) ────────────────────────────────────
@@ -253,6 +272,10 @@ export interface SessionNode {
    *  The alias renders the target's icon/title (read-only) and jumps to it on click.
    *  Alias nodes carry no children, body, or content of their own. */
   refId?: string
+  /** Magic items attached to an `item` node, each with a quantity. */
+  items?: { itemId: string; count: number }[]
+  /** Creatures attached to an `encounter` node, each with a quantity. */
+  creatures?: { creatureId: string; count: number }[]
 }
 
 /** A single roll of a dice pool: the individual die faces plus the final total. */
@@ -305,6 +328,7 @@ export interface AppData extends CampaignState {
 
   // ── shared across all campaigns ──
   bestiary: Creature[]
+  items: Item[]
   tables: RefItem[]
   /**
    * D&D Beyond CobaltSession cookie, used by the proxy to fetch campaign-only

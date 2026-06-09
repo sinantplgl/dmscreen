@@ -12,6 +12,7 @@ export function CombatTracker() {
   const setRound = useStore((s) => s.setRound)
   const addCombatant = useStore((s) => s.addCombatant)
   const sortByInit = useStore((s) => s.sortByInit)
+  const clearCombatants = useStore((s) => s.clearCombatants)
 
   const [expanded, setExpanded] = useState<string | null>(null)
   const [condFor, setCondFor] = useState<string | null>(null)
@@ -78,6 +79,16 @@ export function CombatTracker() {
         <span className="spacer" />
         <button className="btn btn-sm" onClick={sortByInit} title="Sort by initiative">
           Sort ▼
+        </button>
+        <button
+          className="btn btn-sm"
+          disabled={combatants.length === 0}
+          title="Remove all combatants and reset to round 1"
+          onClick={() => {
+            if (confirm(`Clear all ${combatants.length} combatant(s) and reset the round?`)) clearCombatants()
+          }}
+        >
+          Clear
         </button>
       </div>
       <div className="add-row">

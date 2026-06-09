@@ -46,11 +46,14 @@ export function iconFor(n: SessionNode): ReactNode {
 }
 
 export const isLeafType = (type: string) =>
-  type === 'note' || type === 'statblock' || type === 'image' || type === 'item'
+  type === 'note' || type === 'statblock' || type === 'image' || type === 'item' || type === "npc"
 
 export const showsByDefault = (type: string) => isLeafType(type)
 
-export const isHidden = (n: SessionNode) => n.hidden ?? !showsByDefault(n.type)
+// Refs are shown by default (a reference almost always carries something worth
+// seeing here); other nodes follow their type default. `hidden` is per-node, so a
+// ref's visibility here is independent of the original node's visibility at home.
+export const isHidden = (n: SessionNode) => n.hidden ?? (n.refId ? false : !showsByDefault(n.type))
 
 export const childrenOf = (nodes: SessionNode[], parentId: string | undefined) =>
   nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.order - b.order)

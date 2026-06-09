@@ -275,6 +275,17 @@ export function makeDefaultData(): AppData {
       { id: 'pl_4', partyId: 'party_1', name: 'Durin Copperpot', className: 'Rogue (Arcane Trickster)', level: 7, abilities: { str: 10, dex: 18, con: 14, int: 13, wis: 12, cha: 14 }, maxHp: 44, ac: 15, ddbUrl: '' },
     ],
     bestiary: [ABOLETH, GORGATH, SHADOW_WRAITH, VAULT_SKELETON],
+    items: [
+      {
+        id: 'itm_amulet_health',
+        name: 'Amulet of Health',
+        itemType: 'Wondrous Item',
+        rarity: 'rare',
+        attunement: true,
+        description:
+          'Your Constitution score is **19** while you wear this amulet. It has no effect on you if your Constitution is already 19 or higher.',
+      },
+    ],
     tables: REFERENCE_TABLES,
     sessionNodes: [
       {

@@ -4,6 +4,7 @@ import { CombatTracker } from '../panels/CombatTracker'
 import { DiceRoller } from '../panels/DiceRoller'
 import { PlayerRoster } from '../panels/PlayerRoster'
 import { Bestiary } from '../panels/Bestiary'
+import { Items } from '../panels/Items'
 import { ReferenceTables } from '../panels/ReferenceTables'
 import { SessionTracker } from '../panels/SessionTracker'
 import { WebFrame } from '../panels/WebFrame'
@@ -15,6 +16,7 @@ import {
   BookIcon,
   CompassIcon,
   GlobeIcon,
+  GemIcon,
 } from '../components/icons'
 
 export interface PanelMeta {
@@ -28,6 +30,7 @@ export const PANEL_REGISTRY: PanelMeta[] = [
   { type: 'combat', label: 'Combat Tracker', icon: <SwordsIcon />, render: () => <CombatTracker /> },
   { type: 'dice', label: 'Dice Roller', icon: <DiceIcon />, render: () => <DiceRoller /> },
   { type: 'bestiary', label: 'Bestiary', icon: <DragonIcon />, render: () => <Bestiary /> },
+  { type: 'items', label: 'Items', icon: <GemIcon />, render: () => <Items /> },
   {
     type: 'players',
     label: 'Player Roster',

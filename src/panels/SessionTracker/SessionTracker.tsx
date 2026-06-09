@@ -8,7 +8,10 @@ import { SearchBox } from './SearchBox'
 import { NodeRow } from './NodeRow'
 import { NodeCard } from './NodeCard'
 import { FocusedContent } from './FocusedContent'
+import { ChildVisibility } from './ChildVisibility'
+import { MaximizedView } from './MaximizedView'
 import { CreaturePicker, ReferencePicker } from './pickers'
+import type { CardSettings } from '../ReferenceTables/ReferenceCards'
 import './SessionTracker.css'
 
 export function SessionTracker({
@@ -24,6 +27,8 @@ export function SessionTracker({
   const updateNode = useStore((s) => s.updateNode)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const [refPickerParent, setRefPickerParent] = useState<string | undefined | null>(null)
+  const [maxStack, setMaxStack] = useState<string[]>([])
+  const maximize = (id: string) => setMaxStack((s) => (s[s.length - 1] === id ? s : [...s, id]))
 
   const storedFocus = config?.focusId as string | undefined
   const focusId = storedFocus && nodes.some((n) => n.id === storedFocus) ? storedFocus : undefined
@@ -37,6 +42,10 @@ export function SessionTracker({
   const view = (config?.view as 'tree' | 'board') ?? 'tree'
   const boardCols = (config?.boardCols as number) ?? 12
   const showHidden = !!config?.showHidden
+
+  const cardSettings = (config?.cardSettings as Record<string, CardSettings>) || {}
+  const setCardSettings = (id: string, s: CardSettings) =>
+    onConfig({ cardSettings: { ...cardSettings, [id]: s } })
 
   const roots = childrenOf(nodes, focusId)
   const rootNums = siblingNumbers(roots)
@@ -146,6 +155,7 @@ export function SessionTracker({
               >
                 {showHidden ? <><EyeIcon /> Hidden</> : <><EyeSlashIcon />{` Hidden${hiddenCount ? ` (${hiddenCount})` : ''}`}</>}
               </button>
+              <ChildVisibility children={roots} />
             </>
           )}
           <span className="spacer" />
@@ -182,7 +192,18 @@ export function SessionTracker({
       </div>
 
       <div className="session-tree-body">
-        {view === 'board' ? (
+        {view === 'board' && maxStack.length > 0 ? (
+          <MaximizedView
+            nodes={nodes}
+            stack={maxStack}
+            setStack={setMaxStack}
+            setFocus={setFocus}
+            onPick={setPickerFor}
+            boardCols={boardCols}
+            cardSettings={cardSettings}
+            setCardSettings={setCardSettings}
+          />
+        ) : view === 'board' ? (
           <>
             {focusNode && <FocusedContent node={focusNode} onPick={setPickerFor} />}
             {boardItems.length === 0 ? (
@@ -208,7 +229,10 @@ export function SessionTracker({
                     node={n}
                     nodes={nodes}
                     setFocus={setFocus}
+                    maximize={maximize}
                     onPick={setPickerFor}
+                    settings={cardSettings[n.id]}
+                    onSettings={(s) => setCardSettings(n.id, s)}
                   />
                 )}
               />

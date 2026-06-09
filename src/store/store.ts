@@ -8,6 +8,7 @@ import { createCombatSlice, type CombatActions } from './slices/combat'
 import { createPartySlice, type PartyActions } from './slices/parties'
 import { createPlayerSlice, type PlayerActions } from './slices/players'
 import { createBestiarySlice, type BestiaryActions } from './slices/bestiary'
+import { createItemSlice, type ItemActions } from './slices/items'
 import { createReferenceSlice, type ReferenceActions } from './slices/reference'
 import { createSessionSlice, type SessionActions } from './slices/session'
 import { createDiceSlice, type DiceActions } from './slices/dice'
@@ -25,7 +26,7 @@ type AssertNoDuplicates<T extends never> = T
 
 export type _CheckActionKeys = AssertNoDuplicates<_Dupes<[
   CampaignActions, LayoutActions, CombatActions, PartyActions, PlayerActions,
-  BestiaryActions, ReferenceActions, SessionActions, DiceActions, MetaActions
+  BestiaryActions, ItemActions, ReferenceActions, SessionActions, DiceActions, MetaActions
 ]>>
 
 export type Actions = CampaignActions &
@@ -34,6 +35,7 @@ export type Actions = CampaignActions &
   PartyActions &
   PlayerActions &
   BestiaryActions &
+  ItemActions &
   ReferenceActions &
   SessionActions &
   DiceActions &
@@ -51,6 +53,7 @@ export const useStore = create<Store>()(
       ...createPartySlice(...a),
       ...createPlayerSlice(...a),
       ...createBestiarySlice(...a),
+      ...createItemSlice(...a),
       ...createReferenceSlice(...a),
       ...createSessionSlice(...a),
       ...createDiceSlice(...a),
@@ -58,7 +61,7 @@ export const useStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 3,
+      version: 4,
       partialize: (s) => ({
         campaigns: s.campaigns,
         activeCampaignId: s.activeCampaignId,
@@ -74,6 +77,7 @@ export const useStore = create<Store>()(
         sessionNodes: s.sessionNodes,
         diceHistory: s.diceHistory,
         bestiary: s.bestiary,
+        items: s.items,
         tables: s.tables,
         ddbCobalt: s.ddbCobalt,
       }),
@@ -104,6 +108,9 @@ export const useStore = create<Store>()(
               panels: (c.panels ?? []).filter((p) => !removed.has(p.type)),
             })),
           }))
+        }
+        if (version < 4 || !Array.isArray(state.items)) {
+          state.items = (state.items as AppData['items']) ?? []
         }
         return state as unknown as AppData
       },

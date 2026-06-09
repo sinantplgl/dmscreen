@@ -32,6 +32,7 @@ export const createMetaSlice: Slice<MetaActions> = (set, get) => ({
       sessionNodes: s.sessionNodes,
       diceHistory: s.diceHistory,
       bestiary: s.bestiary,
+      items: s.items,
       tables: s.tables,
       ddbCobalt: '',
     }

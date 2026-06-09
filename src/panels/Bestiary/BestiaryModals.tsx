@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../store/store'
+import { Checkbox } from '../../components/Checkbox'
 import { ABILITY_KEYS, ABILITY_LABELS } from '../../lib/dnd'
 import type { Abilities, Creature } from '../../types'
 import { sourceForUrl } from '../../bestiary'
@@ -31,6 +32,13 @@ export function CreatureEditModal({ creature, onClose }: { creature: Creature; o
             <span>Type line (e.g. "Large undead, chaotic evil")</span>
             <input value={d.meta} onChange={(e) => f({ meta: e.target.value })} />
           </label>
+          <div className="field full">
+            <Checkbox
+              checked={!!d.unique}
+              onChange={(v) => f({ unique: v })}
+              label="Unique — only one can be in combat / an encounter at a time"
+            />
+          </div>
           <label className="field full">
             <span>Image URL (backdrop + combat portrait)</span>
             <div style={{ display: 'flex', gap: 6 }}>

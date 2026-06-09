@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { DragEvent } from 'react'
 import { useStore } from '../store/store'
+import { confirmDialog } from '../lib/dialog'
 
 const PANEL_MIME = 'application/x-panel'
 const TAB_MIME = 'application/x-tab'
@@ -85,9 +86,17 @@ export function TabBar() {
                 <span
                   className="tab-close"
                   title="Delete tab"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation()
-                    if (confirm(`Delete tab "${tab.name}" and all its panels?`)) deleteTab(tab.id)
+                    if (
+                      await confirmDialog({
+                        title: 'Delete tab?',
+                        message: `Delete tab "${tab.name}" and all its panels?`,
+                        confirmLabel: 'Delete',
+                        danger: true,
+                      })
+                    )
+                      deleteTab(tab.id)
                   }}
                 >
                   ✕

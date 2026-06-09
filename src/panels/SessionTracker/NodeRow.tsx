@@ -3,6 +3,7 @@ import type { DragEvent } from 'react'
 import { useStore } from '../../store/store'
 import type { SessionNode } from '../../types'
 import { TypePicker } from './TypePicker'
+import { confirmDialog } from '../../lib/dialog'
 import {
   NODE_MIME,
   type DropZone,
@@ -195,8 +196,17 @@ export function NodeRow({
           <button
             className="icon-btn danger"
             title={isAlias ? 'Remove alias' : 'Delete (with everything inside)'}
-            onClick={() => {
-              if (isAlias || confirm(`Delete "${node.title}" and everything inside it?`)) removeNode(node.id)
+            onClick={async () => {
+              if (
+                isAlias ||
+                (await confirmDialog({
+                  title: 'Delete node?',
+                  message: `Delete "${node.title || placeholderFor(node)}" and everything inside it?`,
+                  confirmLabel: 'Delete',
+                  danger: true,
+                }))
+              )
+                removeNode(node.id)
             }}
           >
             ✕

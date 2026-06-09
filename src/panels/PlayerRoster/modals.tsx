@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../../store/store'
+import { confirmDialog } from '../../lib/dialog'
 import {
   ABILITY_KEYS,
   ABILITY_LABELS,
@@ -187,7 +188,22 @@ export function EditModal({ player, onClose }: { player: Player; onClose: () => 
           </label>
         </div>
         <div className="modal-actions">
-          <button className="btn" onClick={() => { if (confirm(`Remove ${player.name}?`)) { removePlayer(player.id); onClose() } }}>
+          <button
+            className="btn"
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  title: 'Remove character?',
+                  message: `Remove ${player.name}?`,
+                  confirmLabel: 'Remove',
+                  danger: true,
+                })
+              ) {
+                removePlayer(player.id)
+                onClose()
+              }
+            }}
+          >
             Delete
           </button>
           <span className="spacer" />

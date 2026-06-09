@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store'
 import type { AppData } from '../types'
 import { SwordsIcon } from '../components/icons'
+import { confirmDialog, alertDialog, promptDialog } from '../lib/dialog'
 
 function useClock() {
   const [time, setTime] = useState('--:--')
@@ -47,8 +48,8 @@ function CampaignSelector() {
       <button
         className="icon-btn"
         title="New campaign"
-        onClick={() => {
-          const name = prompt('Name for the new campaign?')
+        onClick={async () => {
+          const name = await promptDialog({ title: 'New campaign', placeholder: 'Campaign name' })
           if (name !== null) addCampaign(name)
         }}
       >
@@ -57,8 +58,8 @@ function CampaignSelector() {
       <button
         className="icon-btn"
         title="Rename this campaign"
-        onClick={() => {
-          const name = prompt('Rename campaign', active?.name)
+        onClick={async () => {
+          const name = await promptDialog({ title: 'Rename campaign', defaultValue: active?.name })
           if (name?.trim()) renameCampaign(activeCampaignId, name.trim())
         }}
       >
@@ -68,8 +69,15 @@ function CampaignSelector() {
         className="icon-btn danger"
         title="Delete this campaign and all its data"
         disabled={campaigns.length <= 1}
-        onClick={() => {
-          if (confirm(`Delete campaign "${active?.name}" and everything in it? This cannot be undone.`))
+        onClick={async () => {
+          if (
+            await confirmDialog({
+              title: 'Delete campaign?',
+              message: `Delete campaign "${active?.name}" and everything in it? This cannot be undone.`,
+              confirmLabel: 'Delete',
+              danger: true,
+            })
+          )
             deleteCampaign(activeCampaignId)
         }}
       >
@@ -105,14 +113,22 @@ export function Header() {
 
   const doImport = (file: File) => {
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const data = JSON.parse(reader.result as string) as AppData
         if (!data.tabs || !Array.isArray(data.tabs)) throw new Error('Missing "tabs"')
         if (!data.activeTabId) data.activeTabId = data.tabs[0]?.id
-        if (confirm('Import will replace all current data. Continue?')) importData(data)
+        if (
+          await confirmDialog({
+            title: 'Import data?',
+            message: 'Import will replace all current data. Continue?',
+            confirmLabel: 'Import',
+            danger: true,
+          })
+        )
+          importData(data)
       } catch (err) {
-        alert('Could not import: ' + (err as Error).message)
+        await alertDialog({ title: 'Import failed', message: 'Could not import: ' + (err as Error).message })
       }
     }
     reader.readAsText(file)
@@ -137,8 +153,15 @@ export function Header() {
         </button>
         <button
           className="btn"
-          onClick={() => {
-            if (confirm('Reset everything to the default demo data? This cannot be undone.'))
+          onClick={async () => {
+            if (
+              await confirmDialog({
+                title: 'Reset everything?',
+                message: 'Reset everything to the default demo data? This cannot be undone.',
+                confirmLabel: 'Reset',
+                danger: true,
+              })
+            )
               resetData()
           }}
           title="Reset to defaults"

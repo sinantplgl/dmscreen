@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useStore } from '../../store/store'
 import type { CustomNodeType, SessionNode } from '../../types'
 import { NODE_TYPE_PRESETS, ICON_LIBRARY, ICON_BY_KEY, iconFor, customTypeUsage } from './helpers'
+import { confirmDialog } from '../../lib/dialog'
 
 const renderIcon = (icon?: string): ReactNode => {
   if (!icon) return null
@@ -58,7 +59,7 @@ export function TypePicker({ node }: { node: SessionNode }) {
     close()
   }
 
-  const deleteCustom = (type: string) => {
+  const deleteCustom = async (type: string) => {
     const fallback = customNodeTypes.find((t) => t.type === type)?.base ?? 'note'
     const groups = customTypeUsage(type, sessionNodes, activeCampaignId, campaigns, inactiveCampaigns)
     const total = groups.reduce((n, g) => n + g.count, 0)
@@ -68,9 +69,12 @@ export function TypePicker({ node }: { node: SessionNode }) {
         const more = g.count - shown.length
         return `• ${g.campaignName}: ${shown.join(', ')}${more > 0 ? ` +${more} more` : ''}`
       })
-      const ok = confirm(
-        `Delete custom type "${type}"? It's used by ${total} node(s) — they'll fall back to "${fallback}":\n\n${lines.join('\n')}`,
-      )
+      const ok = await confirmDialog({
+        title: `Delete custom type "${type}"?`,
+        message: `It's used by ${total} node(s) — they'll fall back to "${fallback}":\n\n${lines.join('\n')}`,
+        confirmLabel: 'Delete',
+        danger: true,
+      })
       if (!ok) return
     }
     removeCustomNodeType(type)

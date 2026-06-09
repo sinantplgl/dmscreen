@@ -3,6 +3,7 @@ import './PlayerRoster.css'
 import { useStore } from '../../store/store'
 import type { Player } from '../../types'
 import { SwordsIcon, WarningIcon } from '../../components/icons'
+import { confirmDialog, promptDialog } from '../../lib/dialog'
 import { ddbId, fetchRendered } from './helpers'
 import { PlayerSheetCard } from './SheetCard'
 import { CobaltModal, EditModal } from './modals'
@@ -110,8 +111,8 @@ export function PlayerRoster({
         <button
           className="icon-btn"
           title="Rename party"
-          onClick={() => {
-            const name = prompt('Rename party', activeParty?.name || '')
+          onClick={async () => {
+            const name = await promptDialog({ title: 'Rename party', defaultValue: activeParty?.name || '' })
             if (name && name.trim()) renameParty(activePartyId, name.trim())
           }}
         >
@@ -121,8 +122,16 @@ export function PlayerRoster({
           <button
             className="icon-btn danger"
             title="Delete party (and its characters)"
-            onClick={() => {
-              if (confirm(`Delete party "${activeParty?.name}" and its characters?`)) deleteParty(activePartyId)
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  title: 'Delete party?',
+                  message: `Delete party "${activeParty?.name}" and its characters?`,
+                  confirmLabel: 'Delete',
+                  danger: true,
+                })
+              )
+                deleteParty(activePartyId)
             }}
           >
             ✕

@@ -316,7 +316,14 @@ main.workspace {
 .btn:hover { background: var(--card2); border-color: var(--accent); color: var(--gold); }
 .btn-accent { background: var(--accent2); border-color: var(--accent2); color: var(--text); }
 .btn-accent:hover { background: #a04040; color: var(--text); }
+.btn-danger { background: #7a2020; border-color: #7a2020; color: #f3dada; }
+.btn-danger:hover { background: #9c2a2a; border-color: #b13434; color: #fff; }
 .btn-sm { padding: 2px 7px; font-size: 9px; }
+
+/* Modal confirm/alert/prompt dialogs (see src/lib/dialog.tsx) */
+.dialog-modal { width: min(440px, 94vw); }
+.dialog-message { color: var(--text); font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 4px; }
+.dialog-modal input { width: 100%; box-sizing: border-box; margin-top: 10px; }
 /* Per-panel styles now live beside each panel (src/panels/<Name>/<Name>.css). */
 
 /* Bare `input` (not just specific types) so typeless inputs — e.g. the session

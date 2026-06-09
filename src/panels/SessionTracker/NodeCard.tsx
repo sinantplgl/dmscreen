@@ -6,6 +6,7 @@ import { StatBlock } from '../StatBlock'
 import { NodeChildren } from './NodeChildren'
 import { TypePicker } from './TypePicker'
 import { sectionsFor } from './sections'
+import { confirmDialog } from '../../lib/dialog'
 import type { SessionNode } from '../../types'
 import { EyeIcon, EyeSlashIcon, LinkIcon } from '../../components/icons'
 import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber, baseTypeOf } from './helpers'
@@ -223,8 +224,16 @@ export function NodeCard({
         <button
           className="icon-btn danger"
           title="Delete (with everything inside)"
-          onClick={() => {
-            if (confirm(`Delete "${node.title}" and everything inside it?`)) removeNode(node.id)
+          onClick={async () => {
+            if (
+              await confirmDialog({
+                title: 'Delete node?',
+                message: `Delete "${node.title || placeholderFor(node)}" and everything inside it?`,
+                confirmLabel: 'Delete',
+                danger: true,
+              })
+            )
+              removeNode(node.id)
           }}
         >
           ✕

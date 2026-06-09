@@ -4,6 +4,7 @@ import { useStore } from '../store/store'
 import type { Tab } from '../types'
 import { PanelFrame } from './PanelFrame'
 import { PANEL_REGISTRY } from './panelRegistry'
+import { confirmDialog } from '../lib/dialog'
 
 const MIME = 'application/x-panel'
 
@@ -111,10 +112,15 @@ export function ColumnGrid({ tab }: { tab: Tab }) {
                 <button
                   className="icon-btn danger"
                   title="Remove column (panels are removed with it)"
-                  onClick={() => {
+                  onClick={async () => {
                     if (
                       col.panels.length === 0 ||
-                      confirm('Remove this column and its panels?')
+                      (await confirmDialog({
+                        title: 'Remove column?',
+                        message: 'Remove this column and its panels?',
+                        confirmLabel: 'Remove',
+                        danger: true,
+                      }))
                     )
                       removeColumn(tab.id, col.id)
                   }}

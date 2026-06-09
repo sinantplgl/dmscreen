@@ -2,6 +2,7 @@ import { useStore } from './store/store'
 import { Header } from './layout/Header'
 import { TabBar } from './layout/TabBar'
 import { ColumnGrid } from './layout/ColumnGrid'
+import { DialogHost } from './lib/dialog'
 
 export default function App() {
   const tabs = useStore((s) => s.tabs)
@@ -22,6 +23,7 @@ export default function App() {
       <Header />
       <TabBar />
       {activeTab && <ColumnGrid tab={activeTab} />}
+      <DialogHost />
     </>
   )
 }

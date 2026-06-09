@@ -4,6 +4,7 @@ import { Board } from '../../components/Board'
 import type { Box } from '../../components/Board/Board'
 import { Checkbox } from '../../components/Checkbox'
 import { useStore } from '../../store/store'
+import { confirmDialog } from '../../lib/dialog'
 import type { RefItem } from '../../types'
 import { RefItemView, type CardSettings } from './ReferenceCards'
 
@@ -63,8 +64,15 @@ export function ReferenceTables({
 
   const createItem = (kind: 'table' | 'note' | 'image') => showOnPanel(addRefItem(kind))
   const copyItem = (id: string) => showOnPanel(copyRefItem(id))
-  const deleteFromLibrary = (item: RefItem) => {
-    if (!confirm(`Delete "${item.title}" from the reference library? It will disappear from every panel.`))
+  const deleteFromLibrary = async (item: RefItem) => {
+    if (
+      !(await confirmDialog({
+        title: 'Delete from library?',
+        message: `Delete "${item.title}" from the reference library? It will disappear from every panel.`,
+        confirmLabel: 'Delete',
+        danger: true,
+      }))
+    )
       return
     removeRefItem(item.id)
     if (shownIds.includes(item.id)) hideFromPanel(item.id)

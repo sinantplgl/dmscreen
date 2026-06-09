@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../../store/store'
 import { Checkbox } from '../../components/Checkbox'
 import type { Item } from '../../types'
+import { confirmDialog } from '../../lib/dialog'
 import { RARITY_META } from './rarity'
 
 export function ItemEditModal({ item, onClose }: { item: Item; onClose: () => void }) {
@@ -68,8 +69,15 @@ export function ItemEditModal({ item, onClose }: { item: Item; onClose: () => vo
         <div className="modal-actions">
           <button
             className="btn"
-            onClick={() => {
-              if (confirm(`Delete ${d.name} from the item library?`)) {
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  title: 'Delete item?',
+                  message: `Delete ${d.name} from the item library?`,
+                  confirmLabel: 'Delete',
+                  danger: true,
+                })
+              ) {
                 removeItem(item.id)
                 onClose()
               }

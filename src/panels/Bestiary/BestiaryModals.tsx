@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../../store/store'
 import { Checkbox } from '../../components/Checkbox'
 import { ABILITY_KEYS, ABILITY_LABELS } from '../../lib/dnd'
+import { confirmDialog } from '../../lib/dialog'
 import type { Abilities, Creature } from '../../types'
 import { sourceForUrl } from '../../bestiary'
 import { EntryListEditor } from './EntryListEditor'
@@ -183,8 +184,15 @@ export function CreatureEditModal({ creature, onClose }: { creature: Creature; o
         <div className="modal-actions">
           <button
             className="btn"
-            onClick={() => {
-              if (confirm(`Delete ${d.name} from the bestiary?`)) {
+            onClick={async () => {
+              if (
+                await confirmDialog({
+                  title: 'Delete creature?',
+                  message: `Delete ${d.name} from the bestiary?`,
+                  confirmLabel: 'Delete',
+                  danger: true,
+                })
+              ) {
                 removeCreature(creature.id)
                 onClose()
               }

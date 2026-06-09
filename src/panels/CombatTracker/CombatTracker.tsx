@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './CombatTracker.css'
 import { useStore } from '../../store/store'
 import { CombatantRow } from './CombatantRow'
+import { confirmDialog } from '../../lib/dialog'
 
 export function CombatTracker() {
   const combatants = useStore((s) => s.combatants)
@@ -84,8 +85,16 @@ export function CombatTracker() {
           className="btn btn-sm"
           disabled={combatants.length === 0}
           title="Remove all combatants and reset to round 1"
-          onClick={() => {
-            if (confirm(`Clear all ${combatants.length} combatant(s) and reset the round?`)) clearCombatants()
+          onClick={async () => {
+            if (
+              await confirmDialog({
+                title: 'Clear combat?',
+                message: `Clear all ${combatants.length} combatant(s) and reset the round?`,
+                confirmLabel: 'Clear',
+                danger: true,
+              })
+            )
+              clearCombatants()
           }}
         >
           Clear

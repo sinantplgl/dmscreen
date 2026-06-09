@@ -147,7 +147,7 @@ export function DialogHost() {
   }
 
   return (
-    <div className="overlay center" onClick={cancel} onKeyDown={onKeyDown}>
+    <div className="overlay center dialog-overlay" onClick={cancel} onKeyDown={onKeyDown}>
       <div className="modal dialog-modal" onClick={(e) => e.stopPropagation()}>
         <h2>{req.title}</h2>
         {req.message && <p className="dialog-message">{req.message}</p>}

@@ -398,6 +398,8 @@ label.field > span { display: block; margin-bottom: 2px; letter-spacing: .5px; t
   padding: 18px;
 }
 .overlay.center { align-items: center; justify-content: center; }
+/* Modal dialogs sit above every popover/menu (which reach z-index ~200). */
+.overlay.dialog-overlay { z-index: 1000; }
 .modal h2 { font-family: 'Cinzel', serif; font-size: 15px; color: var(--gold); letter-spacing: 1px; margin-bottom: 12px; }
 
 /* Full-screen image viewer (see ImageLightbox) */

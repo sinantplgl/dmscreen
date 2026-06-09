@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useStore } from '../../store/store'
 import { SwordsIcon, DragonIcon } from '../../components/icons'
 import { StatBlock } from '../StatBlock'
-import type { SessionNode } from '../../types'
 import { setCreatureCount } from './attachments'
 import { EncounterCreaturePicker } from './pickers'
+import { ResizableSection } from './ResizableSection'
+import type { SectionProps } from './sections'
 
 /** Creatures attached to an `encounter` node, each with a quantity, plus a
  *  one-click "send the whole encounter to the combat tracker". */
-export function NodeEncounter({ node }: { node: SessionNode }) {
+export function NodeEncounter({ node, height, onHeight, resizable = true }: SectionProps) {
   const bestiary = useStore((s) => s.bestiary)
   const updateNode = useStore((s) => s.updateNode)
   const sendCreaturesToCombat = useStore((s) => s.sendCreaturesToCombat)
@@ -20,25 +21,25 @@ export function NodeEncounter({ node }: { node: SessionNode }) {
     updateNode(node.id, { creatures: setCreatureCount(node.creatures, creatureId, count) })
   const total = list.reduce((n, c) => n + c.count, 0)
 
-  return (
-    <div className="node-items">
-      <div className="node-items-head">
-        <span className="node-items-title">Creatures</span>
-        <span className="spacer" />
-        {list.length > 0 && (
-          <button
-            className="btn btn-sm"
-            title="Add every creature to the combat tracker"
-            onClick={() => sendCreaturesToCombat(list)}
-          >
-            <SwordsIcon /> Send all ({total})
-          </button>
-        )}
-        <button className="btn btn-sm" onClick={() => setPicking(true)}>
-          + Add creature
+  const actions = (
+    <>
+      {list.length > 0 && (
+        <button
+          className="btn btn-sm"
+          title="Add every creature to the combat tracker"
+          onClick={() => sendCreaturesToCombat(list)}
+        >
+          <SwordsIcon /> Send all ({total})
         </button>
-      </div>
+      )}
+      <button className="btn btn-sm" onClick={() => setPicking(true)}>
+        + Add creature
+      </button>
+    </>
+  )
 
+  return (
+    <ResizableSection title="Creatures" actions={actions} resizable={resizable} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
         <div className="node-items-empty">No creatures yet — click "+ Add creature".</div>
       ) : (
@@ -119,6 +120,6 @@ export function NodeEncounter({ node }: { node: SessionNode }) {
       )}
 
       {picking && <EncounterCreaturePicker nodeId={node.id} onClose={() => setPicking(false)} />}
-    </div>
+    </ResizableSection>
   )
 }

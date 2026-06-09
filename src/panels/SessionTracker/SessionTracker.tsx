@@ -47,6 +47,13 @@ export function SessionTracker({
   const setCardSettings = (id: string, s: CardSettings) =>
     onConfig({ cardSettings: { ...cardSettings, [id]: s } })
 
+  const cardSections = (config?.cardSections as Record<string, Record<string, number>>) || {}
+  const setSectionHeight = (id: string, key: string, px: number) =>
+    onConfig({ cardSections: { ...cardSections, [id]: { ...cardSections[id], [key]: px } } })
+  const cardChildrenOpen = (config?.cardChildrenOpen as Record<string, boolean>) || {}
+  const toggleChildren = (id: string) =>
+    onConfig({ cardChildrenOpen: { ...cardChildrenOpen, [id]: !cardChildrenOpen[id] } })
+
   const roots = childrenOf(nodes, focusId)
   const rootNums = siblingNumbers(roots)
   const atTop = focusId === undefined
@@ -202,6 +209,10 @@ export function SessionTracker({
             boardCols={boardCols}
             cardSettings={cardSettings}
             setCardSettings={setCardSettings}
+            cardSections={cardSections}
+            setSectionHeight={setSectionHeight}
+            cardChildrenOpen={cardChildrenOpen}
+            toggleChildren={toggleChildren}
           />
         ) : view === 'board' ? (
           <>
@@ -228,11 +239,16 @@ export function SessionTracker({
                   <NodeCard
                     node={n}
                     nodes={nodes}
+                    num={rootNums.get(n.id)}
                     setFocus={setFocus}
                     maximize={maximize}
                     onPick={setPickerFor}
                     settings={cardSettings[n.id]}
                     onSettings={(s) => setCardSettings(n.id, s)}
+                    sectionHeights={cardSections[n.id]}
+                    onSectionHeight={(key, px) => setSectionHeight(n.id, key, px)}
+                    childrenOpen={!!cardChildrenOpen[n.id]}
+                    onToggleChildren={() => toggleChildren(n.id)}
                   />
                 )}
               />

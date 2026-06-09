@@ -1,31 +1,42 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
-import { NodeItems } from './NodeItems'
-import { NodeEncounter } from './NodeEncounter'
+import { NodeChildren } from './NodeChildren'
+import { sectionsFor } from './sections'
 import type { SessionNode } from '../../types'
 import { EyeIcon, EyeSlashIcon, LinkIcon } from '../../components/icons'
-import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle } from './helpers'
+import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber } from './helpers'
 import { CardSettingsMenu, DEFAULT_CARD_FONT } from './CardSettingsMenu'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
 
 export function NodeCard({
   node,
   nodes,
+  num,
   setFocus,
   maximize,
   onPick,
   settings = {},
   onSettings,
+  sectionHeights = {},
+  onSectionHeight,
+  childrenOpen = false,
+  onToggleChildren,
 }: {
   node: SessionNode
   nodes: SessionNode[]
+  num?: number
   setFocus: (id: string | undefined) => void
   maximize: (id: string) => void
   onPick: (id: string) => void
   settings?: CardSettings
   onSettings?: (s: CardSettings) => void
+  sectionHeights?: Record<string, number>
+  onSectionHeight?: (key: string, px: number) => void
+  childrenOpen?: boolean
+  onToggleChildren?: () => void
 }) {
   const bestiary = useStore((s) => s.bestiary)
   const updateNode = useStore((s) => s.updateNode)
@@ -35,6 +46,82 @@ export function NodeCard({
   const fontSize = settings.fontSize ?? DEFAULT_CARD_FONT
   const contentCols = settings.contentCols ?? 1
   const bodyStyle = { ['--ref-font-size' as string]: `${fontSize}px` }
+
+  // Primary content for a node (the scrollable "notes" region). When `editable`
+  // is false (alias cards), it's always read-only.
+  const notesContent = (n: SessionNode, editable: boolean): ReactNode => {
+    const creature = n.creatureId ? bestiary.find((b) => b.id === n.creatureId) : undefined
+    if (n.type === 'statblock') {
+      return creature ? (
+        <StatBlock creature={creature} />
+      ) : editable ? (
+        <button className="btn btn-sm" onClick={() => onPick(n.id)}>
+          Link a creature…
+        </button>
+      ) : (
+        <div className="node-empty">No creature linked.</div>
+      )
+    }
+    if (n.type === 'image') {
+      if (editable && (editing || !n.imageUrl)) {
+        return (
+          <input
+            type="url"
+            placeholder="Image URL…"
+            value={n.imageUrl || ''}
+            onChange={(e) => updateNode(n.id, { imageUrl: e.target.value })}
+          />
+        )
+      }
+      return n.imageUrl ? (
+        <img className="node-card-img" src={n.imageUrl} alt={n.title} />
+      ) : (
+        <div className="node-empty">No image set.</div>
+      )
+    }
+    if (editable && editing) {
+      return (
+        <textarea
+          className="node-body-edit"
+          placeholder="Markdown — **bold**, # heading, - list, > quote"
+          value={n.body}
+          onChange={(e) => updateNode(n.id, { body: e.target.value })}
+        />
+      )
+    }
+    return n.body ? (
+      <div style={{ columnCount: contentCols > 1 ? contentCols : undefined }}>
+        <Markdown text={n.body} />
+      </div>
+    ) : (
+      <div className="node-empty">{editable ? 'No notes. Click ✎ to edit.' : 'No notes.'}</div>
+    )
+  }
+
+  // The notes + resizable extras + togglable children stack, shared by both
+  // branches. `content` is the source node for content (target for aliases);
+  // section heights / children-open are always keyed on this card (`node.id`).
+  const sections = (content: SessionNode, editable: boolean) => (
+    <div className="node-card-sections">
+      <div className="node-card-notes" style={bodyStyle}>
+        {notesContent(content, editable)}
+      </div>
+      {sectionsFor(content.type).map(({ key, Component }) => (
+        <Component
+          key={key}
+          node={content}
+          height={sectionHeights[key]}
+          onHeight={(px) => onSectionHeight?.(key, px)}
+        />
+      ))}
+      <NodeChildren
+        node={content}
+        open={childrenOpen}
+        onToggle={() => onToggleChildren?.()}
+        maximize={maximize}
+      />
+    </div>
+  )
 
   if (node.refId) {
     const target = nodes.find((n) => n.id === node.refId)
@@ -49,7 +136,6 @@ export function NodeCard({
         </div>
       )
     }
-    const targetCreature = target.creatureId ? bestiary.find((b) => b.id === target.creatureId) : undefined
     const targetLeaf = isLeafType(target.type)
     return (
       <div className={'node-card alias' + (targetLeaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
@@ -57,6 +143,8 @@ export function NodeCard({
           <span className="drag-grip" title="Drag to move">⠿</span>
           <span className="alias-badge node-type-icon">↪</span>
           <span className="node-type-icon" title={target.type}>{iconFor(target)}</span>
+          {num != null && <span className="node-card-num">{num}</span>}
+          <span className="node-card-num ref-orig" title="Original number">[{nodeNumber(nodes, target) ?? '?'}]</span>
           <span className="node-alias-card-title">{displayTitle(target)}</span>
           <span className="spacer" />
           <button className="icon-btn" title="Maximize (focus mode)" onClick={() => maximize(target.id)}>⤢</button>
@@ -77,29 +165,12 @@ export function NodeCard({
           )}
           <button className="icon-btn danger" title="Remove alias" onClick={() => removeNode(node.id)}>✕</button>
         </div>
-        <div className="node-card-body" style={bodyStyle}>
-          {target.type === 'statblock' ? (
-            targetCreature ? <StatBlock creature={targetCreature} /> : <div className="node-empty">No creature linked.</div>
-          ) : target.type === 'image' ? (
-            target.imageUrl
-              ? <img className="node-card-img" src={target.imageUrl} alt={target.title} />
-              : <div className="node-empty">No image set.</div>
-          ) : target.body ? (
-            <div style={{ columnCount: contentCols > 1 ? contentCols : undefined }}>
-              <Markdown text={target.body} />
-            </div>
-          ) : (
-            <div className="node-empty">No notes.</div>
-          )}
-          {target.type === 'item' && <NodeItems node={target} />}
-          {target.type === 'encounter' && <NodeEncounter node={target} />}
-        </div>
+        {sections(target, false)}
       </div>
     )
   }
 
   const leaf = isLeafType(node.type)
-  const creature = node.creatureId ? bestiary.find((b) => b.id === node.creatureId) : undefined
 
   return (
     <div className={'node-card' + (leaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
@@ -108,6 +179,7 @@ export function NodeCard({
         <span className="node-type-icon" title={node.type}>
           {iconFor(node)}
         </span>
+        {num != null && <span className="node-card-num">{num}</span>}
         <input
           className="node-title"
           value={node.title}
@@ -155,43 +227,7 @@ export function NodeCard({
         </button>
       </div>
 
-      <div className="node-card-body" style={bodyStyle}>
-        {node.type === 'statblock' ? (
-          creature ? (
-            <StatBlock creature={creature} />
-          ) : (
-            <button className="btn btn-sm" onClick={() => onPick(node.id)}>
-              Link a creature…
-            </button>
-          )
-        ) : node.type === 'image' ? (
-          editing || !node.imageUrl ? (
-            <input
-              type="url"
-              placeholder="Image URL…"
-              value={node.imageUrl || ''}
-              onChange={(e) => updateNode(node.id, { imageUrl: e.target.value })}
-            />
-          ) : (
-            <img className="node-card-img" src={node.imageUrl} alt={node.title} />
-          )
-        ) : editing ? (
-          <textarea
-            className="node-body-edit"
-            placeholder="Markdown — **bold**, # heading, - list, > quote"
-            value={node.body}
-            onChange={(e) => updateNode(node.id, { body: e.target.value })}
-          />
-        ) : node.body ? (
-          <div style={{ columnCount: contentCols > 1 ? contentCols : undefined }}>
-            <Markdown text={node.body} />
-          </div>
-        ) : (
-          <div className="node-empty">No notes. Click ✎ to edit.</div>
-        )}
-        {node.type === 'item' && <NodeItems node={node} />}
-        {node.type === 'encounter' && <NodeEncounter node={node} />}
-      </div>
+      {sections(node, true)}
     </div>
   )
 }

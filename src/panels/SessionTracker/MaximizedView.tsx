@@ -1,7 +1,7 @@
 import { Board } from '../../components/Board'
 import { useStore } from '../../store/store'
 import type { SessionNode } from '../../types'
-import { childrenOf, iconFor, displayTitle, isHidden } from './helpers'
+import { childrenOf, iconFor, displayTitle, isHidden, siblingNumbers } from './helpers'
 import { FocusedContent } from './FocusedContent'
 import { NodeCard } from './NodeCard'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
@@ -21,6 +21,10 @@ export function MaximizedView({
   boardCols,
   cardSettings,
   setCardSettings,
+  cardSections,
+  setSectionHeight,
+  cardChildrenOpen,
+  toggleChildren,
 }: {
   nodes: SessionNode[]
   stack: string[]
@@ -30,10 +34,15 @@ export function MaximizedView({
   boardCols: number
   cardSettings: Record<string, CardSettings>
   setCardSettings: (id: string, s: CardSettings) => void
+  cardSections: Record<string, Record<string, number>>
+  setSectionHeight: (id: string, key: string, px: number) => void
+  cardChildrenOpen: Record<string, boolean>
+  toggleChildren: (id: string) => void
 }) {
   const updateNode = useStore((s) => s.updateNode)
   const activeId = stack[stack.length - 1]
   const active = nodes.find((n) => n.id === activeId)
+  const childNums = siblingNumbers(childrenOf(nodes, activeId))
   const children = childrenOf(nodes, activeId).filter((n) => !isHidden(n))
 
   const maximize = (id: string) => setStack([...stack, id])
@@ -109,11 +118,16 @@ export function MaximizedView({
                   <NodeCard
                     node={n}
                     nodes={nodes}
+                    num={childNums.get(n.id)}
                     setFocus={setFocus}
                     maximize={maximize}
                     onPick={onPick}
                     settings={cardSettings[n.id]}
                     onSettings={(s) => setCardSettings(n.id, s)}
+                    sectionHeights={cardSections[n.id]}
+                    onSectionHeight={(key, px) => setSectionHeight(n.id, key, px)}
+                    childrenOpen={!!cardChildrenOpen[n.id]}
+                    onToggleChildren={() => toggleChildren(n.id)}
                   />
                 )}
               />

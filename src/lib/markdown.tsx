@@ -84,6 +84,9 @@ export function Markdown({ text }: { text: string }) {
     const line = lines[i]
     if (isBlank(line)) {
       i++
+      // Consume any further blank lines; emit a single spacer between content blocks.
+      while (i < lines.length && isBlank(lines[i])) i++
+      if (blocks.length > 0 && i < lines.length) blocks.push(<br key={b++} />)
       continue
     }
 

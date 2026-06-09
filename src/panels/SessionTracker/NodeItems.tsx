@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { GemIcon } from '../../components/icons'
-import type { SessionNode } from '../../types'
 import { setItemCount } from './attachments'
 import { ItemPicker } from './pickers'
 import { ItemEditModal } from '../Items/ItemModals'
 import { rarityColor, itemTypeLine } from '../Items/rarity'
+import { ResizableSection } from './ResizableSection'
+import { AttunementIcon } from '../../components/icons'
+import type { SectionProps } from './sections'
 
 /** Magic items attached to an `item` node, each with a quantity. */
-export function NodeItems({ node }: { node: SessionNode }) {
+export function NodeItems({ node, height, onHeight, resizable = true }: SectionProps) {
   const items = useStore((s) => s.items)
   const updateNode = useStore((s) => s.updateNode)
   const [picking, setPicking] = useState(false)
@@ -21,16 +23,14 @@ export function NodeItems({ node }: { node: SessionNode }) {
     updateNode(node.id, { items: setItemCount(node.items, itemId, count) })
   const editing = items.find((it) => it.id === editId)
 
-  return (
-    <div className="node-items">
-      <div className="node-items-head">
-        <span className="node-items-title">Items</span>
-        <span className="spacer" />
-        <button className="btn btn-sm" onClick={() => setPicking(true)}>
-          + Add item
-        </button>
-      </div>
+  const actions = (
+    <button className="btn btn-sm" onClick={() => setPicking(true)}>
+      + Add item
+    </button>
+  )
 
+  return (
+    <ResizableSection title="Items" actions={actions} resizable={resizable} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
         <div className="node-items-empty">No items yet — click "+ Add item".</div>
       ) : (
@@ -59,13 +59,16 @@ export function NodeItems({ node }: { node: SessionNode }) {
                   </span>
                 )}
                 <button
-                  className="attach-name attach-name-btn"
+                  className="attach-name attach-name-btn attach-item-name-btn"
                   style={{ color }}
                   title={open ? 'Hide details' : 'Show details'}
                   onClick={() => setOpenId(open ? null : it.id)}
                 >
-                  {it.name}
-                  <span className="attach-sub"> — {itemTypeLine(it.itemType, it.rarity, it.attunement)}</span>
+                  <span className="attach-item-name-main">
+                    {it.name}
+                    {it.attunement && <AttunementIcon className="attach-item-attunement" />}
+                  </span>
+                  <span className="attach-item-sub">{itemTypeLine(it.itemType, it.rarity)}</span>
                 </button>
                 <span className="attach-stepper">
                   <button className="ref-stepper-btn" title="Fewer" onClick={() => setCount(it.id, ref.count - 1)}>
@@ -95,6 +98,6 @@ export function NodeItems({ node }: { node: SessionNode }) {
 
       {picking && <ItemPicker nodeId={node.id} onClose={() => setPicking(false)} />}
       {editing && <ItemEditModal item={editing} onClose={() => setEditId(null)} />}
-    </div>
+    </ResizableSection>
   )
 }

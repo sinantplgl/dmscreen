@@ -64,6 +64,11 @@ export function displayTitle(n: SessionNode): ReactNode {
   return n.title.trim() ? n.title : createElement('span', { className: 'muted' }, placeholderFor(n))
 }
 
+/** A node's own auto/pinned number among its home siblings (as shown in the tree). */
+export function nodeNumber(nodes: SessionNode[], node: SessionNode): number | undefined {
+  return siblingNumbers(childrenOf(nodes, node.parentId)).get(node.id)
+}
+
 export function siblingNumbers(siblings: SessionNode[]): Map<string, number> {
   const out = new Map<string, number>()
   let n = 0

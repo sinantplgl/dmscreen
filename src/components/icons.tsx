@@ -524,6 +524,26 @@ export function CastleIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+export function AttunementIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      fill="currentColor"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      style={{ verticalAlign: '-0.125em' }}
+      {...props}
+    >
+      {/* Outer box */}
+      <path fillRule="evenodd" d="M1 1h14v14H1V1zm1 1v12h12V2H2z" />
+      {/* Letter A */}
+      <path d="M8 3.5L4.5 12h1.2l.9-2.2h2.8l.9 2.2h1.2L8 3.5zm0 2.1 1.05 2.9H6.95L8 5.6z" />
+    </svg>
+  )
+}
+
 export function ElfIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg

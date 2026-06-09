@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
-import { NodeItems } from './NodeItems'
-import { NodeEncounter } from './NodeEncounter'
+import { sectionsFor } from './sections'
 import type { SessionNode } from '../../types'
 
 export function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (id: string) => void }) {
@@ -71,16 +70,11 @@ export function FocusedContent({ node, onPick }: { node: SessionNode; onPick: (i
           )}
         </div>
       )}
-      {node.type === 'item' && (
-        <div className="self-card">
-          <NodeItems node={node} />
+      {sectionsFor(node.type).map(({ key, Component }) => (
+        <div className="self-card" key={key}>
+          <Component node={node} resizable={false} />
         </div>
-      )}
-      {node.type === 'encounter' && (
-        <div className="self-card">
-          <NodeEncounter node={node} />
-        </div>
-      )}
+      ))}
     </div>
   )
 }

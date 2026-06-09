@@ -157,14 +157,120 @@
   flex: 0 0 auto;
 }
 .node-card-head .node-title { font-size: 14px !important; }
-.node-card-body {
+.node-card-num {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.node-card-num.ref-orig { color: var(--accent); font-weight: 500; }
+/* Card body is now a vertical stack: scrollable notes (flex-fills) + resizable
+   extra sections + a collapsible children footer — all inside the fixed card
+   height, so the card never scrolls as a whole. */
+.node-card-sections {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.node-card-notes {
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding: 8px 10px;
 }
-.node-card.leaf .node-card-body { padding: 6px; }
+.node-card.leaf .node-card-notes { padding: 6px; }
 .node-card-img { display: block; max-width: 100%; border-radius: 3px; }
+
+/* ── Resizable extra-info section ── */
+.node-section {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+  background: var(--card2);
+}
+/* In the focused/maximized detail pane the section isn't resizable — size to content. */
+.node-section.static { background: transparent; border-top: none; }
+.node-section-grip {
+  flex: 0 0 auto;
+  height: 6px;
+  cursor: ns-resize;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.node-section-grip:hover { background: var(--accent); }
+.node-section-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
+.node-section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.node-section-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px 8px;
+}
+
+/* ── Collapsible children footer ── */
+.node-children {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+}
+.node-children-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-align: left;
+  color: var(--muted);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.node-children-head:hover { color: var(--text); }
+.node-children-caret { width: 10px; }
+.node-children-list {
+  overflow: auto;
+  max-height: 160px;
+  padding: 4px 6px;
+}
+.node-children-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.node-children-row:hover { background: var(--surface); }
+.node-children-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
 
 /* node rows */
 .node-row {
@@ -254,8 +360,10 @@
 }
 .node-body-edit {
   width: 100%;
-  min-height: 80px;
-  resize: vertical;
+  height: 100%;
+  min-height: 96px;
+  box-sizing: border-box;
+  resize: none;
 }
 .node-image {
   display: block;
@@ -420,6 +528,41 @@
 }
 .attach-statblock {
   margin: 4px 0 2px;
+}
+/* Item name button — two-line layout (line 1: name + attunement; line 2: type/rarity) */
+.attach-name-btn.attach-item-name-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  white-space: normal;
+  text-overflow: clip;
+  overflow: hidden;
+}
+/* Name + inline attunement icon — block so text overflows with "..." */
+.attach-item-name-main {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attach-item-attunement {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 7px;
+  font-size: 15px;
+  opacity: 0.75;
+}
+.attach-item-sub {
+  font-size: 13px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 .attach-unique {
   flex: 0 0 auto;

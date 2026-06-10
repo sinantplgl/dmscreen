@@ -275,6 +275,8 @@ export interface SessionNode {
   /** Free-text user labels, each shown as a small tag chip. Also searchable,
    *  alongside an implicit (never-stored) `${type}${number}` label. */
   labels?: string[]
+  /** Optional accent color (CSS hex) tinting the card's title bar on the board. */
+  color?: string
   /** Magic items attached to an `item` node, each with a quantity. */
   items?: { itemId: string; count: number }[]
   /** Creatures attached to an `encounter` node, each with a quantity. */

@@ -4,6 +4,9 @@ import type { CardSettings } from '../ReferenceTables/ReferenceCards'
 
 export const DEFAULT_CARD_FONT = 15
 
+/** Title-bar accent swatches. Muted, parchment-friendly tones. */
+const TITLE_COLORS = ['#b4543a', '#c8893a', '#caa83a', '#5f8f4e', '#3f8f8a', '#3f6fb0', '#7a5bb0', '#a8517e']
+
 const clamp = (lo: number, hi: number, n: number) => Math.max(lo, Math.min(hi, n))
 
 /** Gear menu on a node card: per-card font size, optional column count, and a
@@ -14,11 +17,15 @@ export function CardSettingsMenu({
   onSettings,
   allowColumns,
   allowLabels,
+  color,
+  onColor,
 }: {
   settings: CardSettings
   onSettings: (s: CardSettings) => void
   allowColumns: boolean
   allowLabels?: boolean
+  color?: string
+  onColor?: (next: string | undefined) => void
 }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0 })
@@ -64,6 +71,29 @@ export function CardSettingsMenu({
                   </button>
                   <button className="ref-stepper-btn" onClick={() => setCols(contentCols + 1)} title="More columns">
                     +
+                  </button>
+                </div>
+              </>
+            )}
+            {onColor && (
+              <>
+                <span>Title color</span>
+                <div className="card-color-swatches">
+                  {TITLE_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      className={'card-color-swatch' + (color === c ? ' on' : '')}
+                      style={{ background: c }}
+                      title={c}
+                      onClick={() => onColor(color === c ? undefined : c)}
+                    />
+                  ))}
+                  <button
+                    className={'card-color-swatch none' + (!color ? ' on' : '')}
+                    title="No color"
+                    onClick={() => onColor(undefined)}
+                  >
+                    ✕
                   </button>
                 </div>
               </>

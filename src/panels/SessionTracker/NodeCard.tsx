@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
@@ -13,6 +13,13 @@ import { EyeIcon, EyeSlashIcon, LinkIcon } from '../../components/icons'
 import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber, baseTypeOf } from './helpers'
 import { CardSettingsMenu, DEFAULT_CARD_FONT } from './CardSettingsMenu'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
+
+/** Tint a card's title bar with the node's accent color: a translucent fill
+ *  plus a solid left edge. `color` is a 6-digit hex; undefined = no highlight. */
+function headColorStyle(color?: string): CSSProperties | undefined {
+  if (!color) return undefined
+  return { background: `${color}33`, boxShadow: `inset 3px 0 0 ${color}` }
+}
 
 export function NodeCard({
   node,
@@ -146,14 +153,13 @@ export function NodeCard({
     const targetLeaf = isLeafType(targetBase)
     return (
       <div className={'node-card alias' + (targetLeaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
-        <div className="node-card-head">
+        <div className="node-card-head" style={headColorStyle(target.color)}>
           <span className="drag-grip" title="Drag to move">⠿</span>
           <span className="alias-badge node-type-icon">↪</span>
           <span className="node-type-icon" title={target.type}>{iconFor(target)}</span>
           {num != null && <span className="node-card-num">{num}</span>}
           <span className="node-card-num ref-orig" title="Original number">[{nodeNumber(nodes, target) ?? '?'}]</span>
           <span className="node-alias-card-title">{displayTitle(target)}</span>
-          <span className="spacer" />
           <button className="icon-btn" title="Maximize (focus mode)" onClick={() => maximize(target.id)}>⤢</button>
           <button className="icon-btn" title="Go to the original card" onClick={() => setFocus(target.id)}>⊕</button>
           <button
@@ -184,7 +190,7 @@ export function NodeCard({
 
   return (
     <div className={'node-card' + (leaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
-      <div className="node-card-head">
+      <div className="node-card-head" style={headColorStyle(node.color)}>
         <span className="drag-grip" title="Drag to move">⠿</span>
         <TypePicker node={node} />
         {num != null && <span className="node-card-num">{num}</span>}
@@ -194,7 +200,6 @@ export function NodeCard({
           placeholder={placeholderFor(node)}
           onChange={(e) => updateNode(node.id, { title: e.target.value })}
         />
-        <span className="spacer" />
         {nodeBase === 'statblock' ? (
           <button className="icon-btn" title="Link creature" onClick={() => onPick(node.id)}>
             <LinkIcon />
@@ -223,6 +228,8 @@ export function NodeCard({
             onSettings={onSettings}
             allowColumns={nodeBase !== 'statblock' && nodeBase !== 'image'}
             allowLabels
+            color={node.color}
+            onColor={(color) => updateNode(node.id, { color })}
           />
         )}
         <button

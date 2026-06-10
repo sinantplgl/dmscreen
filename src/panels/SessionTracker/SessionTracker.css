@@ -944,3 +944,28 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
 }
 .ref-toggle-pill:hover { color: var(--text); }
 .ref-toggle-pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Title-color swatch palette in the card settings menu. */
+.card-color-swatches {
+  justify-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 132px;
+}
+.card-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+}
+.card-color-swatch.on { outline: 2px solid var(--text); outline-offset: 1px; }
+.card-color-swatch.none {
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1;
+  border-style: dashed;
+}

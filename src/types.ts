@@ -272,6 +272,9 @@ export interface SessionNode {
    *  The alias renders the target's icon/title (read-only) and jumps to it on click.
    *  Alias nodes carry no children, body, or content of their own. */
   refId?: string
+  /** Free-text user labels, each shown as a small tag chip. Also searchable,
+   *  alongside an implicit (never-stored) `${type}${number}` label. */
+  labels?: string[]
   /** Magic items attached to an `item` node, each with a quantity. */
   items?: { itemId: string; count: number }[]
   /** Creatures attached to an `encounter` node, each with a quantity. */

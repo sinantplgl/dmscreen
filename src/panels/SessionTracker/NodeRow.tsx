@@ -3,6 +3,7 @@ import type { DragEvent } from 'react'
 import { useStore } from '../../store/store'
 import type { SessionNode } from '../../types'
 import { TypePicker } from './TypePicker'
+import { LabelChips } from './LabelChips'
 import { confirmDialog } from '../../lib/dialog'
 import {
   NODE_MIME,
@@ -173,12 +174,17 @@ export function NodeRow({
           <>
             <TypePicker node={node} />
             <NumberPrefix node={node} num={num} />
-            <input
-              className="node-title"
-              value={node.title}
-              placeholder={placeholderFor(node)}
-              onChange={(e) => updateNode(node.id, { title: e.target.value })}
-            />
+            <div className="node-titlewrap">
+              <input
+                className="node-title"
+                value={node.title}
+                placeholder={placeholderFor(node)}
+                onChange={(e) => updateNode(node.id, { title: e.target.value })}
+              />
+              {node.labels && node.labels.length > 0 && (
+                <LabelChips labels={node.labels} className="node-row-labels" />
+              )}
+            </div>
           </>
         )}
 

@@ -876,3 +876,71 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
   white-space: nowrap;
   font-size: 13px;
 }
+
+/* ── Labels ── */
+/* A node's tag chips. On a board card this sits between the head and the body
+   (editable when "Show labels" is on); on a tree row it's a second line that
+   aligns under the node title via .node-titlewrap. */
+.node-labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.node-card .node-labels { padding: 4px 6px; border-bottom: 1px solid var(--border); }
+/* The title + its labels stack vertically; the column starts at the title so
+   labels align under the node name rather than the row's left edge. */
+.node-titlewrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.node-row-labels { padding: 2px 0 2px; }
+.node-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.node-label-chip svg { font-size: 10px; opacity: 0.8; }
+.node-label-x {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 0 0 1px;
+  font-size: 10px;
+  line-height: 1;
+}
+.node-label-x:hover { color: var(--danger, #e06c6c); }
+/* Inline "+ label" add field on an editable card label row. */
+.node-label-add {
+  flex: 0 1 90px;
+  min-width: 60px;
+  font-size: 11px;
+  padding: 1px 6px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}
+.node-label-add:focus { border-style: solid; border-color: var(--accent); outline: none; }
+
+/* "Labels" on/off toggle in the card settings menu — sits in the menu grid's
+   right column so it lines up with the font/column steppers. */
+.ref-toggle-pill {
+  justify-self: end;
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ref-toggle-pill:hover { color: var(--text); }
+.ref-toggle-pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }

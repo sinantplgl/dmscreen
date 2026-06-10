@@ -215,14 +215,30 @@ export function siblingNumbers(siblings: SessionNode[]): Map<string, number> {
 export function searchNodes(nodes: SessionNode[], q: string): SessionNode[] {
   const t = q.trim().toLowerCase()
   if (!t) return []
+  // Precompute each node's sibling number once (grouped by parent) so the
+  // implicit `${type}${number}` label is searchable without an O(n²) scan.
+  const numbers = new Map<string, number>()
+  const byParent = new Map<string | undefined, SessionNode[]>()
+  for (const n of nodes) {
+    const arr = byParent.get(n.parentId) ?? []
+    arr.push(n)
+    byParent.set(n.parentId, arr)
+  }
+  for (const sibs of byParent.values()) {
+    for (const [id, num] of siblingNumbers(childrenOf(sibs, sibs[0]?.parentId)))
+      numbers.set(id, num)
+  }
   return nodes
     .filter((n) => !n.refId)
-    .filter(
-      (n) =>
-        n.title.toLowerCase().includes(t) ||
-        n.type.toLowerCase().includes(t) ||
-        n.body.toLowerCase().includes(t),
-    )
+    .filter((n) => {
+      const num = numbers.get(n.id)
+      const auto = num != null ? `${n.type}${num} ${n.type} ${num}` : ''
+      const labels = (n.labels ?? []).join(' ')
+      return [n.title, n.type, n.body, labels, auto]
+        .join('\n')
+        .toLowerCase()
+        .includes(t)
+    })
     .slice(0, 50)
 }
 

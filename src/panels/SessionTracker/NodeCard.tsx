@@ -4,6 +4,7 @@ import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
 import { NodeChildren } from './NodeChildren'
+import { LabelChips } from './LabelChips'
 import { TypePicker } from './TypePicker'
 import { sectionsFor } from './sections'
 import { confirmDialog } from '../../lib/dialog'
@@ -167,10 +168,12 @@ export function NodeCard({
               settings={settings}
               onSettings={onSettings}
               allowColumns={targetBase !== 'statblock' && targetBase !== 'image'}
+              allowLabels={!!target.labels?.length}
             />
           )}
           <button className="icon-btn danger" title="Remove alias" onClick={() => removeNode(node.id)}>✕</button>
         </div>
+        {settings.showLabels && <LabelChips labels={target.labels} />}
         {sections(target, false)}
       </div>
     )
@@ -219,6 +222,7 @@ export function NodeCard({
             settings={settings}
             onSettings={onSettings}
             allowColumns={nodeBase !== 'statblock' && nodeBase !== 'image'}
+            allowLabels
           />
         )}
         <button
@@ -240,6 +244,9 @@ export function NodeCard({
         </button>
       </div>
 
+      {settings.showLabels && (
+        <LabelChips labels={node.labels} onChange={(labels) => updateNode(node.id, { labels })} />
+      )}
       {sections(node, true)}
     </div>
   )

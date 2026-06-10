@@ -1,20 +1,24 @@
 import { useRef, useState } from 'react'
+import { GearIcon } from '../../components/icons'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
 
 export const DEFAULT_CARD_FONT = 15
 
 const clamp = (lo: number, hi: number, n: number) => Math.max(lo, Math.min(hi, n))
 
-/** ⋯ menu on a node card: per-card font size and (optionally) column count.
- *  Mirrors the Reference panel's card settings; persisted in panel config. */
+/** Gear menu on a node card: per-card font size, optional column count, and a
+ *  toggle for the inline labels row. All persist in panel config; the labels
+ *  themselves live on the node and are edited inline on the card. */
 export function CardSettingsMenu({
   settings,
   onSettings,
   allowColumns,
+  allowLabels,
 }: {
   settings: CardSettings
   onSettings: (s: CardSettings) => void
   allowColumns: boolean
+  allowLabels?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0 })
@@ -35,8 +39,8 @@ export function CardSettingsMenu({
 
   return (
     <>
-      <button ref={btnRef} className="icon-btn" onClick={openMenu} title="Card display settings">
-        ⋯
+      <button ref={btnRef} className="icon-btn" onClick={openMenu} title="Card settings">
+        <GearIcon />
       </button>
       {open && (
         <>
@@ -62,6 +66,18 @@ export function CardSettingsMenu({
                     +
                   </button>
                 </div>
+              </>
+            )}
+            {allowLabels && (
+              <>
+                <span>Labels</span>
+                <button
+                  className={'ref-toggle-pill' + (settings.showLabels ? ' on' : '')}
+                  title={settings.showLabels ? 'Hide the labels row' : 'Show the labels row'}
+                  onClick={() => onSettings({ ...settings, showLabels: !settings.showLabels })}
+                >
+                  {settings.showLabels ? 'On' : 'Off'}
+                </button>
               </>
             )}
           </div>

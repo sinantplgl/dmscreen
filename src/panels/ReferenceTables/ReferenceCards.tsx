@@ -6,7 +6,7 @@ import type { RefImage, RefItem, RefNote, RefTable } from '../../types'
 
 type Update = (id: string, patch: Record<string, unknown>) => void
 
-export type CardSettings = { fontSize?: number; contentCols?: number }
+export type CardSettings = { fontSize?: number; contentCols?: number; showLabels?: boolean }
 
 const DEFAULT_FONT = 13
 const DEFAULT_COLS = 1

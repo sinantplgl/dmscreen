@@ -41,6 +41,12 @@ export function SessionTracker({
   const toggleCollapsed = (id: string) =>
     onConfig({ collapsed: { ...collapsed, [id]: !collapsed[id] } })
   const expand = (id: string) => onConfig({ collapsed: { ...collapsed, [id]: false } })
+  const collapseAll = () => {
+    const next: Record<string, boolean> = {}
+    for (const n of nodes) if (n.parentId) next[n.parentId] = true
+    onConfig({ collapsed: next })
+  }
+  const expandAll = () => onConfig({ collapsed: {} })
 
   const view = (config?.view as 'tree' | 'board') ?? 'tree'
   const boardCols = (config?.boardCols as number) ?? 12
@@ -148,6 +154,16 @@ export function SessionTracker({
               <GridIcon />
             </button>
           </span>
+          {view === 'tree' && (
+            <span className="view-toggle">
+              <button className="btn" title="Collapse all" onClick={collapseAll}>
+                ⊟
+              </button>
+              <button className="btn" title="Expand all" onClick={expandAll}>
+                ⊞
+              </button>
+            </span>
+          )}
           {view === 'board' && (
             <BoardOptionsMenu
               children={optionRoots}

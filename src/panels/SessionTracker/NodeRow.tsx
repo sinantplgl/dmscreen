@@ -81,15 +81,15 @@ export function NodeRow({
   const [editing, setEditing] = useState(false)
   const indent = depth * 16
 
-  // A single click focuses the node (navigates the tree into it); a double
-  // click edits the title instead. Delay the single-click action briefly so a
-  // double click can cancel it.
+  // A single click edits the title; a double click focuses the node
+  // (navigates the tree into it) instead. Delay the single-click
+  // action briefly so a double click can cancel it.
   const clickTimer = useRef<number | null>(null)
   const onTitleClick = () => {
     if (clickTimer.current) return
     clickTimer.current = window.setTimeout(() => {
       clickTimer.current = null
-      setFocus(node.id)
+      setEditing(true)
     }, 220)
   }
   const onTitleDouble = () => {
@@ -97,7 +97,7 @@ export function NodeRow({
       clearTimeout(clickTimer.current)
       clickTimer.current = null
     }
-    setEditing(true)
+    setFocus(node.id)
   }
 
   const onDragStart = (e: DragEvent) => {

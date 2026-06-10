@@ -19,6 +19,7 @@ export function MaximizedView({
   setFocus,
   onPick,
   boardCols,
+  showHidden,
   cardSettings,
   setCardSettings,
   cardSections,
@@ -32,6 +33,7 @@ export function MaximizedView({
   setFocus: (id: string | undefined) => void
   onPick: (id: string) => void
   boardCols: number
+  showHidden: boolean
   cardSettings: Record<string, CardSettings>
   setCardSettings: (id: string, s: CardSettings) => void
   cardSections: Record<string, Record<string, number>>
@@ -44,7 +46,9 @@ export function MaximizedView({
   const activeId = stack[stack.length - 1]
   const active = nodes.find((n) => n.id === activeId)
   const childNums = siblingNumbers(childrenOf(nodes, activeId))
-  const children = childrenOf(nodes, activeId).filter((n) => !isHidden(n, customTypeNames))
+  const children = childrenOf(nodes, activeId).filter(
+    (n) => showHidden || !isHidden(n, customTypeNames),
+  )
 
   const maximize = (id: string) => setStack([...stack, id])
   const minimize = () => setStack(stack.slice(0, -1))

@@ -75,15 +75,23 @@ export function SessionTracker({
   const boardItems = showHidden ? roots : roots.filter((n) => !isHidden(n, customTypeNames))
   const hiddenCount = roots.filter((n) => isHidden(n, customTypeNames)).length
 
-  // Position a freshly-added card at the bottom of the board so it's visible.
-  const placeOnBoard = (id: string) => {
-    const bottomY = roots.reduce((m, n) => Math.max(m, (n.layout?.y ?? 0) + (n.layout?.h ?? 0)), 0)
+  // While a card is maximized, the board UI (options bar + Add actions) targets
+  // the *windowed* node and its children rather than the root board.
+  const maximizing = view === 'board' && maxStack.length > 0
+  const addParent = maximizing ? maxStack[maxStack.length - 1] : focusId
+  const optionRoots = maximizing ? childrenOf(nodes, addParent) : roots
+  const optionHiddenCount = optionRoots.filter((n) => isHidden(n, customTypeNames)).length
+
+  // Position a freshly-added card at the bottom of the given board so it's
+  // visible (defaults to the focused-node board).
+  const placeOnBoard = (id: string, siblings: typeof roots = roots) => {
+    const bottomY = siblings.reduce((m, n) => Math.max(m, (n.layout?.y ?? 0) + (n.layout?.h ?? 0)), 0)
     updateNode(id, { layout: { x: 0, y: bottomY, w: Math.min(6, boardCols), h: 6 }, hidden: false })
   }
 
   const addHere = () => {
-    const id = addNode(focusId, atTop ? 'session' : 'note')
-    if (view === 'board') placeOnBoard(id)
+    const id = addNode(addParent, !maximizing && atTop ? 'session' : 'note')
+    if (view === 'board') placeOnBoard(id, optionRoots)
   }
 
   const [query, setQuery] = useState('')
@@ -120,19 +128,21 @@ export function SessionTracker({
           <AddMenu
             view={view}
             onAddHere={addHere}
-            onAddRef={() => setRefPickerParent(focusId ?? undefined)}
+            onAddRef={() => setRefPickerParent(addParent ?? undefined)}
           />
           <span className="view-toggle">
             <button
               className={'btn' + (view === 'tree' ? ' btn-accent' : '')}
-              title="Tree view"
+              title={maximizing ? 'Close the window to switch views' : 'Tree view'}
+              disabled={maximizing}
               onClick={() => onConfig({ view: 'tree' })}
             >
               <ListIcon />
             </button>
             <button
               className={'btn' + (view === 'board' ? ' btn-accent' : '')}
-              title="Board view"
+              title={maximizing ? 'Close the window to switch views' : 'Board view'}
+              disabled={maximizing}
               onClick={() => onConfig({ view: 'board' })}
             >
               <GridIcon />
@@ -140,12 +150,12 @@ export function SessionTracker({
           </span>
           {view === 'board' && (
             <BoardOptionsMenu
-              children={roots}
+              children={optionRoots}
               boardCols={boardCols}
               onCols={(cols) => onConfig({ boardCols: cols })}
               showHidden={showHidden}
               onToggleHidden={() => onConfig({ showHidden: !showHidden })}
-              hiddenCount={hiddenCount}
+              hiddenCount={optionHiddenCount}
             />
           )}
           <span className="spacer" />
@@ -190,6 +200,7 @@ export function SessionTracker({
             setFocus={setFocus}
             onPick={setPickerFor}
             boardCols={boardCols}
+            showHidden={showHidden}
             cardSettings={cardSettings}
             setCardSettings={setCardSettings}
             cardSections={cardSections}
@@ -266,7 +277,7 @@ export function SessionTracker({
           nodes={nodes}
           onPick={(refId) => {
             const id = addAlias(refPickerParent, refId)
-            if (view === 'board' && refPickerParent === focusId) placeOnBoard(id)
+            if (view === 'board' && refPickerParent === addParent) placeOnBoard(id, optionRoots)
             if (refPickerParent !== undefined) expand(refPickerParent)
             setHighlightId(id)
           }}

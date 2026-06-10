@@ -314,6 +314,8 @@ main.workspace {
   white-space: nowrap;
 }
 .btn:hover { background: var(--card2); border-color: var(--accent); color: var(--gold); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--surface); border-color: var(--border); color: var(--text); }
 .btn-accent { background: var(--accent2); border-color: var(--accent2); color: var(--text); }
 .btn-accent:hover { background: #a04040; color: var(--text); }
 .btn-danger { background: #7a2020; border-color: #7a2020; color: #f3dada; }

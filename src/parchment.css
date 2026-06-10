@@ -254,6 +254,16 @@
   font-style: italic;
   color: var(--p-text);
 }
+/* Entry/intro text is rendered via the markdown renderer (so newlines, blank
+   lines, and *italics* survive). The bold lead-in name is **_…_** at the start
+   of the text; keep bold in the book's text color rather than the parchment
+   red used elsewhere. Tighten the first paragraph so it hugs the entry top. */
+.statblock .markdown {
+  --md-strong: var(--p-text); /* book text color, not the parchment red */
+  --ref-font-size: 13.5px; /* match the parchment body size, not the 15px default */
+  line-height: 1.46;
+}
+.statblock .entry .markdown p { margin: 0; }
 
 /* Editable fields inside a parchment block keep the book look. */
 .parchment input,

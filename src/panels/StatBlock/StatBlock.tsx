@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
+import { Markdown } from '../../lib/markdown'
 import type { Creature, StatEntry } from '../../types'
 import {
   ABILITY_LABELS,
@@ -88,14 +89,13 @@ function Section({
       {heading && <div className="section-heading">{heading}</div>}
       {intro && (
         <div className="entry section-intro" style={{ marginTop: 12, fontStyle: 'italic', opacity: 0.85 }}>
-          {intro}
+          <Markdown text={intro} />
         </div>
       )}
       {hasEntries &&
         entries!.map((e, i) => (
           <div className="entry" key={i} style={{ marginTop: 15 }}>
-            {e.name && <span className="entry-name">{e.name}. </span>}
-            {e.text}
+            <Markdown text={e.name ? `**_${e.name}._** ${e.text}` : e.text} />
           </div>
         ))}
     </>

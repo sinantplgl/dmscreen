@@ -158,7 +158,9 @@ export const isHidden = (n: SessionNode, customTypes?: Set<string>) =>
 export const childrenOf = (nodes: SessionNode[], parentId: string | undefined) =>
   nodes.filter((n) => n.parentId === parentId).sort((a, b) => a.order - b.order)
 
-export const placeholderFor = (n: SessionNode) => `New ${n.type}`
+export const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
+
+export const placeholderFor = (n: SessionNode) => capitalize(n.type)
 
 /** Where a (shared) custom type is used, grouped by campaign — used to warn before
  *  deleting it. Scans the active campaign's nodes plus every inactive campaign snapshot. */

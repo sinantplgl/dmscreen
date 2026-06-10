@@ -10,6 +10,8 @@ export interface MonsterSource {
   label: string
   /** Does this source recognise the given URL? */
   match: (url: string) => boolean
-  /** Fetch + parse the URL into a partial Creature. Throws with a message on failure. */
-  fetchMonster: (url: string) => Promise<Partial<Creature>>
+  /** Fetch + parse the URL into a partial Creature. Throws with a message on
+   *  failure. `cobalt` is the optional D&D Beyond CobaltSession cookie, used to
+   *  reach paid / campaign-only pages. */
+  fetchMonster: (url: string, cobalt?: string) => Promise<Partial<Creature>>
 }

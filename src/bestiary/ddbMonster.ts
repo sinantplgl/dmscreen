@@ -206,8 +206,10 @@ export const DdbMonsterSource: MonsterSource = {
       return false
     }
   },
-  fetchMonster: async (url) => {
-    const r = await fetch(`/ddb-api/monster?url=${encodeURIComponent(url)}`)
+  fetchMonster: async (url, cobalt) => {
+    const r = await fetch(`/ddb-api/monster?url=${encodeURIComponent(url)}`, {
+      headers: cobalt ? { 'x-cobalt': cobalt } : undefined,
+    })
     const json = await r.json().catch(() => ({}))
     if (!r.ok || json.success === false) {
       throw new Error(json.message || `Request failed (${r.status})`)

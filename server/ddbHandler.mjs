@@ -32,12 +32,16 @@ export async function ddbApiHandler(req, res) {
   // ── monster import: fetch the (server-rendered) monster page HTML ──────────
   if (url.pathname === '/ddb-api/monster') {
     const target = url.searchParams.get('url') || ''
+    // CobaltSession cookie (sent as x-cobalt) unlocks paid/campaign-only pages.
+    const cobalt = req.headers['x-cobalt']
     try {
       const u = new URL(target)
       if (!/(^|\.)dndbeyond\.com$/.test(u.hostname) || !u.pathname.startsWith('/monsters/')) {
         throw new Error('Only D&D Beyond /monsters/… URLs can be imported.')
       }
-      const ddb = await fetch(u.href, { headers: { 'User-Agent': UA, Accept: 'text/html' } })
+      const headers = { 'User-Agent': UA, Accept: 'text/html' }
+      if (cobalt) headers.Cookie = `CobaltSession=${cobalt}`
+      const ddb = await fetch(u.href, { headers })
       if (!ddb.ok) throw new Error(`D&D Beyond returned ${ddb.status}`)
       const html = await ddb.text()
       send(res, 200, { success: true, html })

@@ -6,6 +6,7 @@ import { confirmDialog } from '../../lib/dialog'
 import type { Abilities, Creature } from '../../types'
 import { sourceForUrl } from '../../bestiary'
 import { EntryListEditor } from './EntryListEditor'
+import { CobaltModal } from '../PlayerRoster/modals'
 
 export function CreatureEditModal({ creature, onClose }: { creature: Creature; onClose: () => void }) {
   const updateCreature = useStore((s) => s.updateCreature)
@@ -222,9 +223,11 @@ export function AddCreatureModal({
 }) {
   const addCreature = useStore((s) => s.addCreature)
   const addCreatureFrom = useStore((s) => s.addCreatureFrom)
+  const cobalt = useStore((s) => s.ddbCobalt)
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>()
+  const [cobaltOpen, setCobaltOpen] = useState(false)
 
   const doImport = async () => {
     const trimmed = url.trim()
@@ -236,7 +239,7 @@ export function AddCreatureModal({
     setLoading(true)
     setError(undefined)
     try {
-      const data = await source.fetchMonster(trimmed)
+      const data = await source.fetchMonster(trimmed, cobalt)
       onAdded(addCreatureFrom(data))
     } catch (e) {
       setError((e as Error).message)
@@ -264,12 +267,22 @@ export function AddCreatureModal({
           />
         </label>
         <div className="muted" style={{ fontSize: 12 }}>
-          Paste a public D&D Beyond monster page — the stat block fills in automatically and stays
-          fully editable. (More sources later.)
+          Paste a D&D Beyond monster page — the stat block fills in automatically and stays fully
+          editable. For paid or campaign-only monsters,{' '}
+          <button
+            type="button"
+            className="linklike"
+            onClick={() => setCobaltOpen(true)}
+            title={cobalt ? 'DDB cookie is set' : 'Set DDB cookie'}
+          >
+            set DDB Auth{cobalt ? ' ✓' : ''}
+          </button>
+          .
         </div>
         {error && (
           <div style={{ color: 'var(--red)', fontSize: 13, marginTop: 8 }}>{error}</div>
         )}
+        {cobaltOpen && <CobaltModal onClose={() => setCobaltOpen(false)} />}
         <div className="modal-actions">
           <button className="btn" disabled={loading} onClick={() => onAdded(addCreature())}>
             Start blank

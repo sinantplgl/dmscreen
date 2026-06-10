@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { DragEvent } from 'react'
 import { useStore } from '../../store/store'
 import type { SessionNode } from '../../types'
@@ -43,6 +43,7 @@ export function NodeRow({
   nodes,
   depth,
   setFocus,
+  openInBoard,
   goTo,
   collapsed,
   toggleCollapsed,
@@ -54,6 +55,7 @@ export function NodeRow({
   nodes: SessionNode[]
   depth: number
   setFocus: (id: string | undefined) => void
+  openInBoard: (id: string) => void
   goTo: (id: string) => void
   collapsed: Record<string, boolean>
   toggleCollapsed: (id: string) => void
@@ -76,7 +78,27 @@ export function NodeRow({
   const isCollapsed = !!collapsed[node.id]
   const [dragging, setDragging] = useState(false)
   const [dropZone, setDropZone] = useState<DropZone | null>(null)
+  const [editing, setEditing] = useState(false)
   const indent = depth * 16
+
+  // A single click focuses the node (navigates the tree into it); a double
+  // click edits the title instead. Delay the single-click action briefly so a
+  // double click can cancel it.
+  const clickTimer = useRef<number | null>(null)
+  const onTitleClick = () => {
+    if (clickTimer.current) return
+    clickTimer.current = window.setTimeout(() => {
+      clickTimer.current = null
+      setFocus(node.id)
+    }, 220)
+  }
+  const onTitleDouble = () => {
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current)
+      clickTimer.current = null
+    }
+    setEditing(true)
+  }
 
   const onDragStart = (e: DragEvent) => {
     setDraggingNodeId(node.id)
@@ -175,12 +197,28 @@ export function NodeRow({
             <TypePicker node={node} />
             <NumberPrefix node={node} num={num} />
             <div className="node-titlewrap">
-              <input
-                className="node-title"
-                value={node.title}
-                placeholder={placeholderFor(node)}
-                onChange={(e) => updateNode(node.id, { title: e.target.value })}
-              />
+              {editing ? (
+                <input
+                  className="node-title"
+                  autoFocus
+                  value={node.title}
+                  placeholder={placeholderFor(node)}
+                  onChange={(e) => updateNode(node.id, { title: e.target.value })}
+                  onBlur={() => setEditing(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') setEditing(false)
+                  }}
+                />
+              ) : (
+                <span
+                  className="node-title node-title-static"
+                  title="Click to focus · double-click to rename"
+                  onClick={onTitleClick}
+                  onDoubleClick={onTitleDouble}
+                >
+                  {displayTitle(node)}
+                </span>
+              )}
               {node.labels && node.labels.length > 0 && (
                 <LabelChips labels={node.labels} className="node-row-labels" />
               )}
@@ -196,7 +234,7 @@ export function NodeRow({
             <>
               <button className="icon-btn" title="Indent under previous" onClick={() => indentNode(node.id)}>⇥</button>
               <button className="icon-btn" title="Add child" onClick={() => { addNode(node.id, 'note'); expand(node.id) }}>＋</button>
-              <button className="icon-btn" title="Focus / zoom in" onClick={() => setFocus(node.id)}>⤢</button>
+              <button className="icon-btn" title="Open in board view" onClick={() => openInBoard(node.id)}>⤢</button>
             </>
           )}
           <button
@@ -229,6 +267,7 @@ export function NodeRow({
             nodes={nodes}
             depth={depth + 1}
             setFocus={setFocus}
+            openInBoard={openInBoard}
             goTo={goTo}
             collapsed={collapsed}
             toggleCollapsed={toggleCollapsed}

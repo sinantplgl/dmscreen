@@ -36,6 +36,7 @@ export function SessionTracker({
   const storedFocus = config?.focusId as string | undefined
   const focusId = storedFocus && nodes.some((n) => n.id === storedFocus) ? storedFocus : undefined
   const setFocus = (id: string | undefined) => onConfig({ focusId: id })
+  const openInBoard = (id: string) => onConfig({ focusId: id, view: 'board' })
 
   const collapsed = (config?.collapsed as Record<string, boolean> | undefined) || {}
   const toggleCollapsed = (id: string) =>
@@ -277,6 +278,7 @@ export function SessionTracker({
               nodes={nodes}
               depth={0}
               setFocus={setFocus}
+              openInBoard={openInBoard}
               goTo={goTo}
               collapsed={collapsed}
               toggleCollapsed={toggleCollapsed}

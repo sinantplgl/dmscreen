@@ -408,6 +408,15 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
 }
 .node-title:hover { border-color: var(--border) !important; }
 .node-title:focus { background: var(--surface) !important; border-color: var(--accent) !important; }
+/* Tree-row title shown as static text (double-click to edit). Mimics the input
+   box so the row height doesn't shift when switching into edit mode. */
+.node-title-static {
+  cursor: text;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .node-actions { display: flex; gap: 2px; flex: 0 0 auto; }
 .node-actions .icon-btn { font-size: 16px; padding: 4px 6px; }

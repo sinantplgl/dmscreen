@@ -57,6 +57,36 @@ const ABBR_KEY: Record<string, keyof Abilities> = {
 const tidy = (s: string | null | undefined): string =>
   (s ?? '').replace(/\s+/g, ' ').replace(/\s+([,;.])/g, '$1').trim()
 
+// Like `tidy`, but preserves newlines (paragraph joins / <br>) — only horizontal
+// whitespace is collapsed — so book line structure survives import.
+const tidyMd = (s: string): string =>
+  s
+    .replace(/[^\S\n]+/g, ' ') // collapse spaces/tabs but keep newlines
+    .replace(/ *\n */g, '\n') // trim spaces hugging a newline
+    .replace(/ +([,;.])/g, '$1')
+    .trim()
+
+/** Convert an element's inline content to markdown: <em>/<i> → *…*, <strong>/<b>
+ *  → **…**, <br> → newline; other tags pass through their content. `skip` drops a
+ *  direct child (used to omit a leading bold name that's stored separately). */
+function inlineMd(node: Node, skip?: Node): string {
+  let out = ''
+  node.childNodes.forEach((child) => {
+    if (child === skip) return
+    if (child.nodeType === Node.TEXT_NODE) {
+      out += (child.textContent ?? '').replace(/\s+/g, ' ')
+    } else if (child.nodeType === Node.ELEMENT_NODE) {
+      const el = child as Element
+      const tag = el.tagName
+      if (tag === 'BR') out += '\n'
+      else if (tag === 'EM' || tag === 'I') out += `*${inlineMd(el).trim()}*`
+      else if (tag === 'STRONG' || tag === 'B') out += `**${inlineMd(el).trim()}**`
+      else out += inlineMd(el)
+    }
+  })
+  return out
+}
+
 /** Parse a D&D Beyond 2024 monster page into a partial Creature. Browser-only. */
 export function parseDdbMonster(html: string): Partial<Creature> {
   const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -117,13 +147,17 @@ export function parseDdbMonster(html: string): Partial<Creature> {
 
     const entries: StatEntry[] = []
     let intro = '' // leading nameless text in non-legendary blocks (rare)
+    const addLegendaryIntro = (md: string) => {
+      out.legendaryIntro = out.legendaryIntro ? `${out.legendaryIntro}\n\n${md}` : md
+    }
     content.querySelectorAll(':scope > p').forEach((p) => {
-      const full = text(p)
+      // Body text as markdown (keeps newlines + inline <em>/<strong>).
+      const md = tidyMd(inlineMd(p))
       // The legendary "uses" line is a `<p class="legendary-actions">` (a faded
       // preamble, NOT a named action) and can sit anywhere in the block — pull it
       // out by class so it never gets mistaken for / merged into an action item.
       if (/legendary-actions/.test(p.getAttribute('class') || '')) {
-        if (full) out.legendaryIntro = tidy(out.legendaryIntro ? `${out.legendaryIntro} ${full}` : full)
+        if (md) addLegendaryIntro(md)
         return
       }
       // The leading bold name is the first child element. DDB nests it either way
@@ -133,21 +167,19 @@ export function parseDdbMonster(html: string): Partial<Creature> {
       const labelEl = p.firstElementChild
       const isNamed = !!labelEl && (labelEl.tagName === 'STRONG' || !!labelEl.querySelector('strong'))
       if (isNamed && labelEl) {
-        const lead = text(labelEl)
-        const name = lead.replace(/[.:]+\s*$/, '')
-        const body = (full.startsWith(lead) ? full.slice(lead.length) : full).replace(/^[\s.:]+/, '').trim()
+        const name = text(labelEl).replace(/[.:]+\s*$/, '')
+        // Body = everything after the name element, as markdown.
+        const body = tidyMd(inlineMd(p, labelEl)).replace(/^[\s.:]+/, '').trim()
         entries.push({ name, text: body })
       } else if (entries.length) {
-        // a continuation paragraph of the previous entry
-        entries[entries.length - 1].text = tidy(`${entries[entries.length - 1].text} ${full}`)
-      } else if (full) {
+        // a continuation paragraph of the previous entry — keep it as its own
+        // paragraph (blank line) rather than collapsing into one run.
+        if (md) entries[entries.length - 1].text = `${entries[entries.length - 1].text}\n\n${md}`
+      } else if (md) {
         // a leading nameless paragraph. In legendary blocks (older markup with no
         // class) treat it as the preamble; otherwise stash it for the fallback below.
-        if (field === 'legendary') {
-          out.legendaryIntro = tidy(out.legendaryIntro ? `${out.legendaryIntro} ${full}` : full)
-        } else {
-          intro = tidy(intro ? `${intro} ${full}` : full)
-        }
+        if (field === 'legendary') addLegendaryIntro(md)
+        else intro = intro ? `${intro}\n\n${md}` : md
       }
     })
     out[field] = entries

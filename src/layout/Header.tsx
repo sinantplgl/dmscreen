@@ -1,8 +1,76 @@
-import { useEffect, useRef, useState } from 'react'
-import { useStore } from '../store/store'
-import type { AppData } from '../types'
-import { SwordsIcon } from '../components/icons'
-import { confirmDialog, alertDialog, promptDialog } from '../lib/dialog'
+import { useEffect, useState } from 'react'
+import { useStore, hadPersistedDataAtBoot } from '../store/store'
+import { SwordsIcon, GearIcon } from '../components/icons'
+import { confirmDialog, promptDialog } from '../lib/dialog'
+import { listBackups, fetchBackup, checkForNewerSnapshot, setSyncedMtime } from '../store/backup'
+import { SettingsModal } from './SettingsModal'
+
+function formatWhen(ms: number) {
+  return new Date(ms).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+// On startup, reconcile this browser against the on-disk backups:
+//  • empty/cleared browser → offer to restore the latest backup (the recovery
+//    path for "I cleared my browser data");
+//  • browser with data, but the server has a newer backup (e.g. you edited on
+//    another machine) → offer to pull the newer one.
+function useStartupBackupCheck() {
+  const importData = useStore((s) => s.importData)
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        if (!hadPersistedDataAtBoot) {
+          const backups = await listBackups()
+          const latest = backups.find((b) => b.name === 'latest.json') ?? backups[0]
+          if (!alive || !latest) return
+          const ok = await confirmDialog({
+            title: 'Restore your data?',
+            message: `This browser has no DM Screen data, but ${backups.length} disk backup${backups.length === 1 ? '' : 's'} ${backups.length === 1 ? 'was' : 'were'} found. Restore the most recent one (from ${formatWhen(latest.mtime)})?`,
+            confirmLabel: 'Restore latest',
+            cancelLabel: 'Start fresh',
+          })
+          if (!ok || !alive) return
+          const data = await fetchBackup(latest.name)
+          if (data?.tabs) {
+            importData(data)
+            setSyncedMtime(latest.mtime)
+          }
+        } else {
+          const newer = await checkForNewerSnapshot()
+          if (!alive || !newer) return
+          const ok = await confirmDialog({
+            title: 'Newer backup found',
+            message: `A backup on disk (from ${formatWhen(newer.mtime)}) is newer than this browser's data — looks like you made changes on another device. Load it? This replaces what's currently in this browser.`,
+            confirmLabel: 'Load newer backup',
+            cancelLabel: 'Keep this browser',
+            danger: true,
+          })
+          if (!ok || !alive) {
+            // don't ask again this session for the same snapshot
+            if (newer) setSyncedMtime(newer.mtime)
+            return
+          }
+          const data = await fetchBackup(newer.name)
+          if (data?.tabs) {
+            importData(data)
+            setSyncedMtime(newer.mtime)
+          }
+        }
+      } catch {
+        // no backup server reachable — nothing to reconcile
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [importData])
+}
 
 function useClock() {
   const [time, setTime] = useState('--:--')
@@ -95,44 +163,9 @@ export function Header() {
     document.title = activeCampaignName ? `DM Screen | ${activeCampaignName}` : 'DM Screen'
   }, [activeCampaignName])
 
-  const exportData = useStore((s) => s.exportData)
-  const importData = useStore((s) => s.importData)
-  const resetData = useStore((s) => s.resetData)
-  const fileRef = useRef<HTMLInputElement>(null)
   const clock = useClock()
-
-  const doExport = () => {
-    const blob = new Blob([exportData()], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `dm-screen-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const doImport = (file: File) => {
-    const reader = new FileReader()
-    reader.onload = async () => {
-      try {
-        const data = JSON.parse(reader.result as string) as AppData
-        if (!data.tabs || !Array.isArray(data.tabs)) throw new Error('Missing "tabs"')
-        if (!data.activeTabId) data.activeTabId = data.tabs[0]?.id
-        if (
-          await confirmDialog({
-            title: 'Import data?',
-            message: 'Import will replace all current data. Continue?',
-            confirmLabel: 'Import',
-            danger: true,
-          })
-        )
-          importData(data)
-      } catch (err) {
-        await alertDialog({ title: 'Import failed', message: 'Could not import: ' + (err as Error).message })
-      }
-    }
-    reader.readAsText(file)
-  }
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  useStartupBackupCheck()
 
   return (
     <header className="app-header">
@@ -145,41 +178,15 @@ export function Header() {
       <div className="header-right">
         <span className="clock">{clock}</span>
         <div className="header-divider" />
-        <button className="btn" onClick={doExport} title="Download all data as JSON">
-          Export
-        </button>
-        <button className="btn" onClick={() => fileRef.current?.click()} title="Load data from JSON">
-          Import
-        </button>
         <button
-          className="btn"
-          onClick={async () => {
-            if (
-              await confirmDialog({
-                title: 'Reset everything?',
-                message: 'Reset everything to the default demo data? This cannot be undone.',
-                confirmLabel: 'Reset',
-                danger: true,
-              })
-            )
-              resetData()
-          }}
-          title="Reset to defaults"
+          className="icon-btn"
+          onClick={() => setSettingsOpen(true)}
+          title="Settings, backups, export / import"
         >
-          Reset
+          <GearIcon />
         </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) doImport(f)
-            e.target.value = ''
-          }}
-        />
       </div>
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
     </header>
   )
 }

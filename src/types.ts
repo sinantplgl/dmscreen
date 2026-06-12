@@ -355,4 +355,11 @@ export interface AppData extends CampaignState {
    * local /ddb-api proxy, which forwards it to D&D Beyond.
    */
   ddbCobalt: string
+
+  // ── local backup preferences (device-specific, not real campaign data) ──
+  /** Whether the app auto-saves a copy to disk via /backup-api. Default true. */
+  backupEnabled: boolean
+  /** How often (minutes) a timestamped history snapshot may be written. The
+   *  always-current latest.json is written on every change regardless. Default 60. */
+  backupIntervalMin: number
 }

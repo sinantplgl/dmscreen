@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises'
 import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ddbApiHandler } from './ddbHandler.mjs'
+import { backupApiHandler } from './backupHandler.mjs'
 
 const ROOT = normalize(join(fileURLToPath(import.meta.url), '..', '..'))
 const DIST = join(ROOT, 'dist')
@@ -41,6 +42,7 @@ async function serveFile(res, file, fallbackToIndex = true) {
 
 const server = http.createServer(async (req, res) => {
   if (await ddbApiHandler(req, res)) return
+  if (await backupApiHandler(req, res)) return
 
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname)
   const requested = normalize(join(DIST, pathname === '/' ? '/index.html' : pathname))

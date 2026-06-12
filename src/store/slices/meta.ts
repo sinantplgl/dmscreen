@@ -7,6 +7,8 @@ type Slice<T> = StateCreator<Store, [['zustand/persist', unknown]], [], T>
 
 export interface MetaActions {
   setDdbCobalt: (cobalt: string) => void
+  setBackupEnabled: (enabled: boolean) => void
+  setBackupIntervalMin: (min: number) => void
   exportData: () => string
   importData: (data: AppData) => void
   resetData: () => void
@@ -14,6 +16,8 @@ export interface MetaActions {
 
 export const createMetaSlice: Slice<MetaActions> = (set, get) => ({
   setDdbCobalt: (cobalt) => set({ ddbCobalt: cobalt }),
+  setBackupEnabled: (enabled) => set({ backupEnabled: enabled }),
+  setBackupIntervalMin: (min) => set({ backupIntervalMin: min }),
 
   exportData: () => {
     const s = get()
@@ -36,6 +40,8 @@ export const createMetaSlice: Slice<MetaActions> = (set, get) => ({
       tables: s.tables,
       customNodeTypes: s.customNodeTypes,
       ddbCobalt: '',
+      backupEnabled: s.backupEnabled,
+      backupIntervalMin: s.backupIntervalMin,
     }
     return JSON.stringify(data, null, 2)
   },
@@ -56,6 +62,9 @@ export const createMetaSlice: Slice<MetaActions> = (set, get) => ({
         inactiveCampaigns: data.inactiveCampaigns ?? {},
         customNodeTypes: data.customNodeTypes ?? [],
         ddbCobalt: s.ddbCobalt,
+        // backup prefs are device-local — keep this device's, don't import them
+        backupEnabled: s.backupEnabled,
+        backupIntervalMin: s.backupIntervalMin,
       }
     }),
 

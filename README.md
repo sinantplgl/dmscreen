@@ -59,7 +59,11 @@ is [`zustand`](https://github.com/pmndrs/zustand) for state + persistence
   sites refuse to be embedded, so an "open in new tab" fallback is always offered.
 - **Dice Roller** — build a pool of d4–d100, roll with modifiers/repeats, history.
 - **Export / Import / Reset** — back up everything (all campaigns, bestiary,
-  tables) to JSON and restore it.
+  tables) to JSON and restore it. Found under the ⚙ Settings button in the header.
+- **Automatic disk backup** — when the app is served by its Node server (incl.
+  Docker), it also auto-saves your data to disk so it survives clearing your
+  browser. On by default; toggle and snapshot frequency live in ⚙ Settings, which
+  also lists past snapshots to restore from.
 
 ## Visual design
 
@@ -111,22 +115,35 @@ npm run serve        # http://localhost:8080  (set PORT to change)
 docker compose up -d --build   # then open http://localhost:8080
 ```
 
-The image is the same tiny Node server (serves `dist/` + `/ddb-api`). It's
-stateless — your data lives in the browser's `localStorage` per device. Use
-**Export / Import** in the header to move data between machines or browsers.
+The image is the same tiny Node server (serves `dist/` + `/ddb-api` +
+`/backup-api`). Your working data lives in the browser's `localStorage` per
+device — use **Export / Import** (⚙ Settings) to move it between machines — but
+the container also auto-saves a copy to `./backups` on the host via a bind-mount
+in `docker-compose.yml`. That folder is a real host directory, **not** a named
+Docker volume, so `docker system prune` can't delete it.
 
 ---
 
 ## Data & storage
 
-All state is persisted to `localStorage` under the key `dm-screen-v1`. Nothing is
-sent to any server. The app works completely offline once loaded (the only
-external requests are the Google Fonts in `index.html`, anything you load into a
-**Web Frame** panel, and — if you use it — the D&D Beyond import).
+All state is persisted to `localStorage` under the key `dm-screen-v1`. The app
+works offline once loaded (the only external requests are the Google Fonts in
+`index.html`, anything you load into a **Web Frame** panel, and — if you use it —
+the D&D Beyond import).
 
-Because data is per-browser, there's no sync across devices. Use **Export** to
-download a JSON backup and **Import** on the other machine. Older save formats are
-migrated automatically on load.
+When the app is served by its Node server (`npm run serve` or Docker), it also
+streams a copy of your data to the `backups/` folder on that machine on every
+change: an always-current `latest.json` plus timestamped history snapshots
+(kept to the newest 20, written at most once per the configured interval). This
+is what saves you if the browser's `localStorage` is cleared. It's on by default
+and configurable in ⚙ Settings, which also lets you restore any snapshot. On a
+fresh/cleared browser the app offers to restore the latest backup on first load.
+If the app is hosted as a pure static site with no backend, disk backup simply
+no-ops and `localStorage` works as before.
+
+Because `localStorage` is per-browser, there's no live sync across devices. Use
+**Export** to download a JSON backup and **Import** on the other machine. Older
+save formats are migrated automatically on load.
 
 ## D&D Beyond character import
 

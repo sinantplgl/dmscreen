@@ -5,6 +5,9 @@ import ReactDOM from 'react-dom/client'
 import './styles.css'
 import './parchment.css'
 import App from './App'
+import { startDiskBackup } from './store/backup'
+
+startDiskBackup()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

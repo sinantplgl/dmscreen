@@ -16,6 +16,12 @@ import { createMetaSlice, type MetaActions } from './slices/meta'
 
 const STORAGE_KEY = 'dm-screen-v1'
 
+/** Whether this browser already had saved data when the app booted. Read once,
+ *  before the persist middleware runs, so the UI can offer to restore from a
+ *  disk backup when localStorage was empty (a fresh or freshly-cleared browser). */
+export const hadPersistedDataAtBoot =
+  typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY) != null
+
 type _Keys<T extends object[]> = T extends [infer H, ...infer R extends object[]]
   ? keyof H | _Keys<R> : never
 
@@ -61,7 +67,7 @@ export const useStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 5,
+      version: 6,
       partialize: (s) => ({
         campaigns: s.campaigns,
         activeCampaignId: s.activeCampaignId,
@@ -81,6 +87,8 @@ export const useStore = create<Store>()(
         tables: s.tables,
         customNodeTypes: s.customNodeTypes,
         ddbCobalt: s.ddbCobalt,
+        backupEnabled: s.backupEnabled,
+        backupIntervalMin: s.backupIntervalMin,
       }),
       migrate: (persisted: unknown, version: number) => {
         const state = (persisted ?? {}) as Record<string, unknown>
@@ -115,6 +123,10 @@ export const useStore = create<Store>()(
         }
         if (version < 5 || !Array.isArray(state.customNodeTypes)) {
           state.customNodeTypes = (state.customNodeTypes as AppData['customNodeTypes']) ?? []
+        }
+        if (version < 6) {
+          if (typeof state.backupEnabled !== 'boolean') state.backupEnabled = true
+          if (typeof state.backupIntervalMin !== 'number') state.backupIntervalMin = 60
         }
         return state as unknown as AppData
       },

@@ -2,9 +2,11 @@
 #   docker compose up -d --build
 # then open http://localhost:8080
 #
-# The container is a tiny Node server that serves the built site AND the
-# /ddb-api proxy. It is stateless — your data lives in each browser's
-# localStorage; use the in-app Export / Import to move it between machines.
+# The container is a tiny Node server that serves the built site, the /ddb-api
+# proxy, and the /backup-api on-disk backup. Your working data lives in each
+# browser's localStorage (use the in-app Export / Import to move it between
+# machines), but the app ALSO auto-saves a copy to ./backups on the host (see
+# the `volumes:` bind-mount below) so it survives a browser-data clear.
 #
 # ── "D&D Beyond (exact / rendered)" inside Docker ─────────────────────────────
 # The app image has NO browser baked in (keeps it tiny). The rendered scrape
@@ -41,6 +43,12 @@ services:
     environment:
       # defaults to the browserless service (route A); override for route B
       - BROWSER_CDP_URL=${BROWSER_CDP_URL:-ws://browserless:3000?token=local-dev-token}
+    volumes:
+      # On-disk backups, as a HOST bind-mount (a real folder in this project dir),
+      # NOT a named Docker volume — so `docker system prune` / wiping Docker data
+      # can never delete them. The app writes latest.json + timestamped snapshots
+      # here automatically.
+      - ./backups:/app/backups
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped

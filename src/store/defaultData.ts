@@ -338,6 +338,8 @@ export function makeDefaultData(): AppData {
     ],
     diceHistory: [],
     ddbCobalt: '',
+    backupEnabled: true,
+    backupIntervalMin: 60,
   }
 }
 

@@ -97,7 +97,8 @@ function pendingPayload(): string | null {
   if (!s.backupEnabled) return null
   // never clobber a backup with the untouched demo seed (e.g. fresh browser)
   if (campaignDataKey(s) === SEED_KEY) return null
-  const payload = s.exportData()
+  // Backups are stored minified (manual Export stays pretty-printed via exportData).
+  const payload = JSON.stringify(JSON.parse(s.exportData()))
   return payload === lastSent ? null : payload
 }
 

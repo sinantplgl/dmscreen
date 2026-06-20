@@ -4,26 +4,31 @@ import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 const MIN_H = 48
 const MAX_H = 800
 
+/** How a field section sizes within the card body:
+ *  - `grow`   — flex-fills the remaining height; no title band, no grip. Header
+ *               actions float as a top-right overlay so single-field cards stay clean.
+ *  - `fixed`  — explicit (draggable, persisted) height with a title band + top grip
+ *               that steals space from the `grow` filler above it.
+ *  - `static` — sizes to content, no grip (focused / maximized detail pane). */
+export type SectionMode = 'grow' | 'fixed' | 'static'
+
 /**
- * A labeled card section. Its header carries the section title plus any
- * section-level actions (e.g. "Add creature", "Send all to combat"). When
- * `resizable` (the default) it has a draggable splitter on top: dragging resizes
- * the section, which inside the flex-column card takes space from the scrollable
- * notes above. When not resizable it just sizes to its content (used in the
- * focused/maximized detail pane). Height is persisted by the parent via `onHeight`.
+ * The shell every card field renders into. The card body is a flex column: the
+ * first visible field is `grow` (the filler) and any fields below it are `fixed`
+ * (resizable), so the card is always fully covered.
  */
 export function ResizableSection({
   title,
   actions,
-  resizable = true,
+  mode = 'fixed',
   height,
   onHeight,
   defaultHeight = 140,
   children,
 }: {
-  title: string
+  title?: string
   actions?: ReactNode
-  resizable?: boolean
+  mode?: SectionMode
   height?: number
   onHeight?: (px: number) => void
   defaultHeight?: number
@@ -51,18 +56,30 @@ export function ResizableSection({
     window.addEventListener('pointerup', up)
   }
 
-  return (
-    <div className={'node-section' + (resizable ? '' : ' static')} style={resizable ? { height: cur } : undefined}>
-      {resizable && <div className="node-section-grip" title="Drag to resize" onPointerDown={onGripDown} />}
-      <div className="node-section-head">
-        <span className="node-section-title">{title}</span>
-        {actions != null && (
-          <>
-            <span className="spacer" />
-            {actions}
-          </>
-        )}
+  if (mode === 'grow') {
+    return (
+      <div className="node-section grow">
+        {actions != null && <div className="node-section-overlay">{actions}</div>}
+        <div className="node-section-body">{children}</div>
       </div>
+    )
+  }
+
+  const fixed = mode === 'fixed'
+  return (
+    <div className={'node-section' + (fixed ? '' : ' static')} style={fixed ? { height: cur } : undefined}>
+      {fixed && <div className="node-section-grip" title="Drag to resize" onPointerDown={onGripDown} />}
+      {(title != null || actions != null) && (
+        <div className="node-section-head">
+          {title != null && <span className="node-section-title">{title}</span>}
+          {actions != null && (
+            <>
+              <span className="spacer" />
+              {actions}
+            </>
+          )}
+        </div>
+      )}
       <div className="node-section-body">{children}</div>
     </div>
   )

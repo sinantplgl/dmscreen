@@ -10,7 +10,7 @@ import {
 } from './attachments'
 import { baseTypeOf, displayTitle, iconFor } from './helpers'
 import type { DialogueLine, SessionNode } from '../../types'
-import type { SectionProps } from './sections'
+import type { FieldProps } from './fields'
 
 /** Deterministic hue (0–359) from a string, so each distinct speaker keeps a
  *  stable bubble color across renders. */
@@ -22,7 +22,7 @@ function hueOf(s: string): number {
 
 /** A scripted/spontaneous conversation: an ordered list of speech bubbles,
  *  interleaved DM notes, and PC↔NPC Q&A — sharing one design, differing by kind. */
-export function NodeDialogue({ node, height, onHeight, resizable = true, cols = 1 }: SectionProps) {
+export function NodeDialogue({ node, height, onHeight, mode, cols = 1 }: FieldProps) {
   const nodes = useStore((s) => s.sessionNodes)
   const updateNode = useStore((s) => s.updateNode)
   const [editId, setEditId] = useState<string | null>(null)
@@ -66,7 +66,7 @@ export function NodeDialogue({ node, height, onHeight, resizable = true, cols = 
   )
 
   return (
-    <ResizableSection title="Dialogue" actions={actions} resizable={resizable} height={height} onHeight={onHeight}>
+    <ResizableSection title="Dialogue" actions={actions} mode={mode} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
         <div className="node-items-empty">No lines yet — add a speech bubble, DM note, or Q&amp;A.</div>
       ) : (

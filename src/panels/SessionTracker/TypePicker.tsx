@@ -4,6 +4,7 @@ import { useStore } from '../../store/store'
 import type { CustomNodeType, SessionNode } from '../../types'
 import { NODE_TYPE_PRESETS, ICON_LIBRARY, ICON_BY_KEY, iconFor, customTypeUsage } from './helpers'
 import { confirmDialog } from '../../lib/dialog'
+import { useMenuAnchor } from '../../lib/anchorMenu'
 
 const renderIcon = (icon?: string): ReactNode => {
   if (!icon) return null
@@ -25,20 +26,15 @@ export function TypePicker({ node }: { node: SessionNode }) {
   const inactiveCampaigns = useStore((s) => s.inactiveCampaigns)
 
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
   const [name, setName] = useState('')
   const [iconKey, setIconKey] = useState<string | undefined>(undefined)
   const [emoji, setEmoji] = useState('')
   const [base, setBase] = useState('note')
   const triggerRef = useRef<HTMLSpanElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const menuStyle = useMenuAnchor(open, triggerRef, menuRef, 'left')
 
-  const openMenu = () => {
-    if (triggerRef.current) {
-      const r = triggerRef.current.getBoundingClientRect()
-      setPos({ top: r.bottom + 4, left: r.left })
-    }
-    setOpen((v) => !v)
-  }
+  const openMenu = () => setOpen((v) => !v)
   const close = () => {
     setOpen(false)
     setName('')
@@ -102,7 +98,7 @@ export function TypePicker({ node }: { node: SessionNode }) {
       {open && (
         <>
           <div className="ref-lib-overlay" onClick={close} />
-          <div className="type-menu" style={{ top: pos.top, left: pos.left }}>
+          <div ref={menuRef} className="type-menu" style={menuStyle}>
             <div className="type-menu-title">Built-in</div>
             {builtins.map((p) => (
               <button

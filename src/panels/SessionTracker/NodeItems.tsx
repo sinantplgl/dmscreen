@@ -8,10 +8,10 @@ import { ItemEditModal } from '../Items/ItemModals'
 import { rarityColor, itemTypeLine } from '../Items/rarity'
 import { ResizableSection } from './ResizableSection'
 import { AttunementIcon } from '../../components/icons'
-import type { SectionProps } from './sections'
+import type { FieldProps } from './fields'
 
 /** Magic items attached to an `item` node, each with a quantity. */
-export function NodeItems({ node, height, onHeight, resizable = true }: SectionProps) {
+export function NodeItems({ node, height, onHeight, mode }: FieldProps) {
   const items = useStore((s) => s.items)
   const updateNode = useStore((s) => s.updateNode)
   const [picking, setPicking] = useState(false)
@@ -30,7 +30,7 @@ export function NodeItems({ node, height, onHeight, resizable = true }: SectionP
   )
 
   return (
-    <ResizableSection title="Items" actions={actions} resizable={resizable} height={height} onHeight={onHeight}>
+    <ResizableSection title="Items" actions={actions} mode={mode} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
         <div className="node-items-empty">No items yet — click "+ Add item".</div>
       ) : (

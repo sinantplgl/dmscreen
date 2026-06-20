@@ -257,6 +257,33 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
 }
 /* In the focused/maximized detail pane the section isn't resizable — size to content. */
 .node-section.static { background: transparent; border-top: none; }
+/* The filler field: fills remaining card height, no title band, no top border. */
+.node-section.grow {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  border-top: none;
+  background: transparent;
+}
+.node-section.grow > .node-section-body { padding: 8px 10px; }
+.node-card.leaf .node-section.grow > .node-section-body { padding: 6px; }
+/* Floating action affordances for the headerless filler (e.g. ✎ / + Add).
+   Always present (discoverable) but quiet until hovered. */
+.node-section-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  display: flex;
+  gap: 2px;
+  padding: 1px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+}
+.node-section.grow:hover > .node-section-overlay,
+.node-section-overlay:focus-within { opacity: 1; }
 .node-section-grip {
   flex: 0 0 auto;
   height: 6px;
@@ -742,7 +769,21 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: 5px;
+  overflow: hidden;
+}
+/* Fields menu trigger in the focused/maximized detail pane. */
+.self-fields-bar { position: relative; display: flex; justify-content: flex-end; }
+.self-fields-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  min-width: 180px;
   padding: 8px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
 }
 .self-card-head {
   display: flex;
@@ -1038,6 +1079,48 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
 .dlg-q { font-weight: 700; color: var(--md-strong, #e3b24c); }
 .dlg-a, .dlg-a .markdown-host { font-style: italic; }
 .dlg-q-input { width: 100%; margin-bottom: 4px; }
+
+/* Per-card Fields editor (show/hide + reorder) in the card settings menu. */
+.card-fields-editor {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--border);
+}
+.card-fields-title {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+.card-field-row { display: flex; align-items: center; gap: 4px; }
+.card-field-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  text-align: left;
+}
+.card-field-name:hover { background: var(--surface); }
+.card-field-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  flex: 0 0 auto;
+}
+.card-field-dot.on { background: var(--accent); border-color: var(--accent); }
 
 /* Title-color swatch palette in the card settings menu. */
 .card-color-swatches {

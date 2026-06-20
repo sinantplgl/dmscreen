@@ -5,11 +5,11 @@ import { StatBlock } from '../StatBlock'
 import { setCreatureCount } from './attachments'
 import { EncounterCreaturePicker } from './pickers'
 import { ResizableSection } from './ResizableSection'
-import type { SectionProps } from './sections'
+import type { FieldProps } from './fields'
 
 /** Creatures attached to an `encounter` node, each with a quantity, plus a
  *  one-click "send the whole encounter to the combat tracker". */
-export function NodeEncounter({ node, height, onHeight, resizable = true }: SectionProps) {
+export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
   const bestiary = useStore((s) => s.bestiary)
   const updateNode = useStore((s) => s.updateNode)
   const sendCreaturesToCombat = useStore((s) => s.sendCreaturesToCombat)
@@ -39,7 +39,7 @@ export function NodeEncounter({ node, height, onHeight, resizable = true }: Sect
   )
 
   return (
-    <ResizableSection title="Creatures" actions={actions} resizable={resizable} height={height} onHeight={onHeight}>
+    <ResizableSection title="Creatures" actions={actions} mode={mode} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
         <div className="node-items-empty">No creatures yet — click "+ Add creature".</div>
       ) : (

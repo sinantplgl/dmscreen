@@ -5,6 +5,7 @@ import { childrenOf, iconFor, displayTitle, isHidden, siblingNumbers } from './h
 import { FocusedContent } from './FocusedContent'
 import { NodeCard } from './NodeCard'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
+import type { CardFieldConfig } from './fields'
 
 /**
  * A windowed "maximize" that covers the board area (not the whole screen).
@@ -26,6 +27,8 @@ export function MaximizedView({
   setSectionHeight,
   cardChildrenOpen,
   toggleChildren,
+  cardFields,
+  setCardFields,
 }: {
   nodes: SessionNode[]
   stack: string[]
@@ -40,6 +43,8 @@ export function MaximizedView({
   setSectionHeight: (id: string, key: string, px: number) => void
   cardChildrenOpen: Record<string, boolean>
   toggleChildren: (id: string) => void
+  cardFields: Record<string, CardFieldConfig>
+  setCardFields: (id: string, cfg: CardFieldConfig) => void
 }) {
   const updateNode = useStore((s) => s.updateNode)
   const customTypeNames = new Set(useStore((s) => s.customNodeTypes).map((t) => t.type))
@@ -106,7 +111,14 @@ export function MaximizedView({
       <div className="session-maximized-body">
         {active ? (
           <>
-            <FocusedContent node={active} onPick={onPick} />
+            <FocusedContent
+              node={active}
+              onPick={onPick}
+              fields={cardFields[active.id]}
+              onFields={(cfg) => setCardFields(active.id, cfg)}
+              sectionHeights={cardSections[active.id]}
+              onSectionHeight={(key, px) => setSectionHeight(active.id, key, px)}
+            />
             {children.length > 0 && (
               <Board
                 items={children}
@@ -133,6 +145,8 @@ export function MaximizedView({
                     onSectionHeight={(key, px) => setSectionHeight(n.id, key, px)}
                     childrenOpen={!!cardChildrenOpen[n.id]}
                     onToggleChildren={() => toggleChildren(n.id)}
+                    fields={cardFields[n.id]}
+                    onFields={(cfg) => setCardFields(n.id, cfg)}
                   />
                 )}
               />

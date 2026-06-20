@@ -1,6 +1,10 @@
 import { useRef, useState } from 'react'
 import { GearIcon } from '../../components/icons'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
+import { FieldsEditor } from './fields'
+import type { CardFieldConfig } from './fields'
+import type { SessionNode } from '../../types'
+import { useMenuAnchor } from '../../lib/anchorMenu'
 
 export const DEFAULT_CARD_FONT = 15
 
@@ -9,9 +13,9 @@ const TITLE_COLORS = ['#b4543a', '#c8893a', '#caa83a', '#5f8f4e', '#3f8f8a', '#3
 
 const clamp = (lo: number, hi: number, n: number) => Math.max(lo, Math.min(hi, n))
 
-/** Gear menu on a node card: per-card font size, optional column count, and a
- *  toggle for the inline labels row. All persist in panel config; the labels
- *  themselves live on the node and are edited inline on the card. */
+/** Gear menu on a node card: a per-card Fields editor (show/hide + reorder),
+ *  font size, optional column count, title color, and the inline labels toggle.
+ *  All persist in panel config; field DATA stays on the node. */
 export function CardSettingsMenu({
   settings,
   onSettings,
@@ -19,8 +23,10 @@ export function CardSettingsMenu({
   allowLabels,
   color,
   onColor,
-  showNotes,
-  onShowNotes,
+  base,
+  node,
+  fields,
+  onFields,
 }: {
   settings: CardSettings
   onSettings: (s: CardSettings) => void
@@ -28,26 +34,25 @@ export function CardSettingsMenu({
   allowLabels?: boolean
   color?: string
   onColor?: (next: string | undefined) => void
-  /** Resolved current notes visibility; when provided, shows a Notes toggle. */
-  showNotes?: boolean
-  onShowNotes?: (next: boolean) => void
+  /** When provided, shows the per-card Fields editor. */
+  base?: string
+  node?: SessionNode
+  fields?: CardFieldConfig
+  onFields?: (cfg: CardFieldConfig) => void
 }) {
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState({ top: 0, right: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const menuStyle = useMenuAnchor(open, btnRef, menuRef, 'right')
 
   const fontSize = settings.fontSize ?? DEFAULT_CARD_FONT
   const contentCols = settings.contentCols ?? 1
   const setFont = (n: number) => onSettings({ ...settings, fontSize: clamp(8, 28, n) })
   const setCols = (n: number) => onSettings({ ...settings, contentCols: clamp(1, 4, n) })
 
-  const openMenu = () => {
-    if (btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect()
-      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right })
-    }
-    setOpen((v) => !v)
-  }
+  const showFields = !!(onFields && node && base != null)
+
+  const openMenu = () => setOpen((v) => !v)
 
   return (
     <>
@@ -57,7 +62,8 @@ export function CardSettingsMenu({
       {open && (
         <>
           <div className="ref-lib-overlay" onClick={() => setOpen(false)} />
-          <div className="ref-settings-menu" style={{ top: pos.top, right: pos.right }}>
+          <div ref={menuRef} className="ref-settings-menu" style={menuStyle}>
+            {showFields && <FieldsEditor fields={fields} base={base!} node={node!} onFields={onFields!} />}
             <span>Font size</span>
             <div className="ref-stepper">
               <button className="ref-stepper-btn" onClick={() => setFont(fontSize - 1)} title="Smaller text">
@@ -101,18 +107,6 @@ export function CardSettingsMenu({
                     ✕
                   </button>
                 </div>
-              </>
-            )}
-            {onShowNotes && (
-              <>
-                <span>Notes</span>
-                <button
-                  className={'ref-toggle-pill' + (showNotes ? ' on' : '')}
-                  title={showNotes ? 'Hide the notes region' : 'Show the notes region'}
-                  onClick={() => onShowNotes(!showNotes)}
-                >
-                  {showNotes ? 'On' : 'Off'}
-                </button>
               </>
             )}
             {allowLabels && (

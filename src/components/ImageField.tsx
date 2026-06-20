@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import './ImageField.css'
 
@@ -27,26 +27,12 @@ export function ImageField({
 }) {
   const [scale, setScale] = useState(1)
   const [pos, setPos] = useState({ x: 0, y: 0 })
-  const viewRef = useRef<HTMLDivElement>(null)
 
-  // Snap pan back to center whenever we're fully zoomed out.
+  // Snap pan back to center whenever we're fully zoomed out. Zoom is via the
+  // overlay buttons only — no wheel zoom, so the board/card can still scroll.
   useEffect(() => {
     if (scale === 1 && (pos.x !== 0 || pos.y !== 0)) setPos({ x: 0, y: 0 })
   }, [scale, pos.x, pos.y])
-
-  // Native (non-passive) wheel listener so preventDefault actually stops the
-  // surrounding panel from scrolling while zooming.
-  useEffect(() => {
-    const el = viewRef.current
-    if (!el) return
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
-      setScale((s) => clamp(s * factor))
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [imageUrl])
 
   const zoomTo = (next: number) => setScale(clamp(next))
 
@@ -79,7 +65,7 @@ export function ImageField({
         />
       )}
       {imageUrl ? (
-        <div className="imgfield-view" ref={viewRef}>
+        <div className="imgfield-view">
           <img
             className="imgfield-img"
             src={imageUrl}

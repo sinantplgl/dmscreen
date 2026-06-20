@@ -13,6 +13,7 @@ import { BoardOptionsMenu } from './BoardOptionsMenu'
 import { MaximizedView } from './MaximizedView'
 import { CreaturePicker, ReferencePicker } from './pickers'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
+import type { CardFieldConfig } from './fields'
 import './SessionTracker.css'
 
 export function SessionTracker({
@@ -115,6 +116,10 @@ export function SessionTracker({
   const cardChildrenOpen = (config?.cardChildrenOpen as Record<string, boolean>) || {}
   const toggleChildren = (id: string) =>
     onConfig({ cardChildrenOpen: { ...cardChildrenOpen, [id]: !cardChildrenOpen[id] } })
+
+  const cardFields = (config?.cardFields as Record<string, CardFieldConfig>) || {}
+  const setCardFields = (id: string, cfg: CardFieldConfig) =>
+    onConfig({ cardFields: { ...cardFields, [id]: cfg } })
 
   const roots = childrenOf(nodes, focusId)
   const rootNums = siblingNumbers(roots)
@@ -318,10 +323,21 @@ export function SessionTracker({
             setSectionHeight={setSectionHeight}
             cardChildrenOpen={cardChildrenOpen}
             toggleChildren={toggleChildren}
+            cardFields={cardFields}
+            setCardFields={setCardFields}
           />
         ) : view === 'board' ? (
           <>
-            {focusNode && <FocusedContent node={focusNode} onPick={setPickerFor} />}
+            {focusNode && (
+              <FocusedContent
+                node={focusNode}
+                onPick={setPickerFor}
+                fields={cardFields[focusNode.id]}
+                onFields={(cfg) => setCardFields(focusNode.id, cfg)}
+                sectionHeights={cardSections[focusNode.id]}
+                onSectionHeight={(key, px) => setSectionHeight(focusNode.id, key, px)}
+              />
+            )}
             {boardItems.length === 0 ? (
               <div className="empty-hint">
                 {roots.length === 0
@@ -354,6 +370,8 @@ export function SessionTracker({
                     onSectionHeight={(key, px) => setSectionHeight(n.id, key, px)}
                     childrenOpen={!!cardChildrenOpen[n.id]}
                     onToggleChildren={() => toggleChildren(n.id)}
+                    fields={cardFields[n.id]}
+                    onFields={(cfg) => setCardFields(n.id, cfg)}
                   />
                 )}
               />

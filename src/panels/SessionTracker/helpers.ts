@@ -16,6 +16,7 @@ import {
   NoteIcon,
   ChartIcon,
   ImageIcon,
+  SpeechIcon,
   ShieldIcon,
   DragonIcon,
   CompassIcon,
@@ -65,6 +66,7 @@ export const NODE_TYPE_PRESETS: { type: string; Icon: ComponentType }[] = [
   { type: 'note', Icon: NoteIcon },
   { type: 'statblock', Icon: ChartIcon },
   { type: 'image', Icon: ImageIcon },
+  { type: 'dialogue', Icon: SpeechIcon },
 ]
 
 export const PRESET_ICON: Record<string, ComponentType> = Object.fromEntries(
@@ -88,6 +90,7 @@ export const ICON_LIBRARY: { key: string; Icon: ComponentType }[] = [
   { key: 'note', Icon: NoteIcon },
   { key: 'chart', Icon: ChartIcon },
   { key: 'image', Icon: ImageIcon },
+  { key: 'speech', Icon: SpeechIcon },
   { key: 'shield', Icon: ShieldIcon },
   { key: 'dragon', Icon: DragonIcon },
   { key: 'compass', Icon: CompassIcon },
@@ -143,7 +146,13 @@ export const baseTypeOf = (type: string, customTypes: CustomNodeType[]): string 
 }
 
 export const isLeafType = (type: string) =>
-  type === 'note' || type === 'statblock' || type === 'image' || type === 'item' || type === "npc"
+  type === 'note' || type === 'statblock' || type === 'image' || type === 'item' || type === "npc" || type === 'dialogue'
+
+/** Whether the markdown notes (body) region should render for a node. Per-node
+ *  `showNotes` wins; otherwise `image`/`statblock` default to hidden (their content
+ *  is the image / stat block) and everything else defaults to shown. */
+export const notesVisible = (n: SessionNode, base: string): boolean =>
+  n.showNotes ?? (base !== 'image' && base !== 'statblock')
 
 // Built-in leaf types, plus any user-defined custom type, show on the board by default.
 export const showsByDefault = (type: string, customTypes?: Set<string>) =>

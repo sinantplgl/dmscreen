@@ -49,6 +49,7 @@ export function NodeRow({
   toggleCollapsed,
   expand,
   highlightId,
+  selectedId,
 }: {
   node: SessionNode
   num: number
@@ -61,6 +62,8 @@ export function NodeRow({
   toggleCollapsed: (id: string) => void
   expand: (id: string) => void
   highlightId: string | null
+  /** Node currently shown by a linked board panel — persistently highlighted. */
+  selectedId?: string
 }) {
   const updateNode = useStore((s) => s.updateNode)
   const removeNode = useStore((s) => s.removeNode)
@@ -139,6 +142,7 @@ export function NodeRow({
   }
 
   const highlighted = highlightId === node.id
+  const selected = selectedId === node.id
 
   return (
     <div className="node">
@@ -148,7 +152,8 @@ export function NodeRow({
           (isAlias ? ' alias' : '') +
           (dragging ? ' dragging' : '') +
           (dropZone ? ' drop-' + dropZone : '') +
-          (highlighted ? ' highlighted' : '')
+          (highlighted ? ' highlighted' : '') +
+          (selected ? ' selected' : '')
         }
         data-node-id={node.id}
         style={{ paddingLeft: indent }}
@@ -273,6 +278,7 @@ export function NodeRow({
             toggleCollapsed={toggleCollapsed}
             expand={expand}
             highlightId={highlightId}
+            selectedId={selectedId}
           />
         ))}
     </div>

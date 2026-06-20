@@ -10,7 +10,8 @@ import { sectionsFor } from './sections'
 import { confirmDialog } from '../../lib/dialog'
 import type { SessionNode } from '../../types'
 import { EyeIcon, EyeSlashIcon, LinkIcon } from '../../components/icons'
-import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber, baseTypeOf } from './helpers'
+import { ImageField } from '../../components/ImageField'
+import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber, baseTypeOf, notesVisible } from './helpers'
 import { CardSettingsMenu, DEFAULT_CARD_FONT } from './CardSettingsMenu'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
 
@@ -59,12 +60,12 @@ export function NodeCard({
   const contentCols = settings.contentCols ?? 1
   const bodyStyle = { ['--ref-font-size' as string]: `${fontSize}px` }
 
-  // Primary content for a node (the scrollable "notes" region). When `editable`
-  // is false (alias cards), it's always read-only.
-  const notesContent = (n: SessionNode, editable: boolean): ReactNode => {
-    const creature = n.creatureId ? bestiary.find((b) => b.id === n.creatureId) : undefined
+  // A node's primary field — the image / stat block whose content IS the node.
+  // Returns null for plain content types, whose primary content is the notes.
+  const primaryField = (n: SessionNode, editable: boolean): ReactNode => {
     const base = baseTypeOf(n.type, customNodeTypes)
     if (base === 'statblock') {
+      const creature = n.creatureId ? bestiary.find((b) => b.id === n.creatureId) : undefined
       return creature ? (
         <StatBlock creature={creature} />
       ) : editable ? (
@@ -76,22 +77,22 @@ export function NodeCard({
       )
     }
     if (base === 'image') {
-      if (editable && (editing || !n.imageUrl)) {
-        return (
-          <input
-            type="url"
-            placeholder="Image URL…"
-            value={n.imageUrl || ''}
-            onChange={(e) => updateNode(n.id, { imageUrl: e.target.value })}
-          />
-        )
-      }
-      return n.imageUrl ? (
-        <img className="node-card-img" src={n.imageUrl} alt={n.title} />
-      ) : (
-        <div className="node-empty">No image set.</div>
+      return (
+        <ImageField
+          imageUrl={n.imageUrl}
+          onImageUrlChange={(url) => updateNode(n.id, { imageUrl: url })}
+          editing={editable && editing}
+          editable={editable}
+          alt={n.title}
+        />
       )
     }
+    return null
+  }
+
+  // The markdown notes (body) region. When `editable` is false (alias cards),
+  // it's always read-only.
+  const notesField = (n: SessionNode, editable: boolean): ReactNode => {
     if (editable && editing) {
       return (
         <textarea
@@ -111,30 +112,37 @@ export function NodeCard({
     )
   }
 
-  // The notes + resizable extras + togglable children stack, shared by both
-  // branches. `content` is the source node for content (target for aliases);
-  // section heights / children-open are always keyed on this card (`node.id`).
-  const sections = (content: SessionNode, editable: boolean) => (
-    <div className="node-card-sections">
-      <div className="node-card-notes" style={bodyStyle}>
-        {notesContent(content, editable)}
-      </div>
-      {sectionsFor(baseTypeOf(content.type, customNodeTypes)).map(({ key, Component }) => (
-        <Component
-          key={key}
+  // The primary field + (toggleable) notes + resizable extras + togglable
+  // children stack, shared by both branches. `content` is the source node for
+  // content (target for aliases); section heights / children-open are always
+  // keyed on this card (`node.id`).
+  const sections = (content: SessionNode, editable: boolean) => {
+    const base = baseTypeOf(content.type, customNodeTypes)
+    const primary = primaryField(content, editable)
+    return (
+      <div className="node-card-sections">
+        {primary != null && <div className="node-card-notes" style={bodyStyle}>{primary}</div>}
+        {notesVisible(content, base) && (
+          <div className="node-card-notes" style={bodyStyle}>{notesField(content, editable)}</div>
+        )}
+        {sectionsFor(base).map(({ key, Component }) => (
+          <Component
+            key={key}
+            node={content}
+            height={sectionHeights[key]}
+            onHeight={(px) => onSectionHeight?.(key, px)}
+            cols={contentCols}
+          />
+        ))}
+        <NodeChildren
           node={content}
-          height={sectionHeights[key]}
-          onHeight={(px) => onSectionHeight?.(key, px)}
+          open={childrenOpen}
+          onToggle={() => onToggleChildren?.()}
+          maximize={maximize}
         />
-      ))}
-      <NodeChildren
-        node={content}
-        open={childrenOpen}
-        onToggle={() => onToggleChildren?.()}
-        maximize={maximize}
-      />
-    </div>
-  )
+      </div>
+    )
+  }
 
   if (node.refId) {
     const target = nodes.find((n) => n.id === node.refId)
@@ -230,6 +238,8 @@ export function NodeCard({
             allowLabels
             color={node.color}
             onColor={(color) => updateNode(node.id, { color })}
+            showNotes={notesVisible(node, nodeBase)}
+            onShowNotes={(v) => updateNode(node.id, { showNotes: v })}
           />
         )}
         <button

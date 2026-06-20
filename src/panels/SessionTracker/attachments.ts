@@ -3,6 +3,9 @@
 //   `node.creatures` — { creatureId, count }[] (encounter nodes)
 // Adding an already-present id bumps its count; setting a count ≤ 0 removes it.
 
+import { uid } from '../../lib/dnd'
+import type { DialogueLine } from '../../types'
+
 export type ItemRef = { itemId: string; count: number }
 export type CreatureRef = { creatureId: string; count: number }
 
@@ -42,4 +45,43 @@ export function setCreatureCount(
   const cur = list ?? []
   if (count <= 0) return cur.filter((x) => x.creatureId !== creatureId)
   return cur.map((x) => (x.creatureId === creatureId ? { ...x, count } : x))
+}
+
+// ── Dialogue lines (dialogue nodes) ─────────────────────────────────────────
+// Append/update/remove/reorder the ordered `node.dialogue` list. Each helper
+// returns a new array; the caller persists it via updateNode.
+
+export function addDialogueLine(
+  list: DialogueLine[] | undefined,
+  kind: DialogueLine['kind'],
+): DialogueLine[] {
+  return [...(list ?? []), { id: uid('dl'), kind }]
+}
+
+export function updateDialogueLine(
+  list: DialogueLine[] | undefined,
+  id: string,
+  patch: Partial<DialogueLine>,
+): DialogueLine[] {
+  return (list ?? []).map((l) => (l.id === id ? { ...l, ...patch } : l))
+}
+
+export function removeDialogueLine(
+  list: DialogueLine[] | undefined,
+  id: string,
+): DialogueLine[] {
+  return (list ?? []).filter((l) => l.id !== id)
+}
+
+export function moveDialogueLine(
+  list: DialogueLine[] | undefined,
+  id: string,
+  dir: -1 | 1,
+): DialogueLine[] {
+  const cur = [...(list ?? [])]
+  const i = cur.findIndex((l) => l.id === id)
+  const j = i + dir
+  if (i < 0 || j < 0 || j >= cur.length) return cur
+  ;[cur[i], cur[j]] = [cur[j], cur[i]]
+  return cur
 }

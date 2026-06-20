@@ -574,6 +574,15 @@ export function GridIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+export function SpeechIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style={{ verticalAlign: '-0.125em' }} {...props}>
+      <path d="M2.5 1A1.5 1.5 0 0 0 1 2.5v6A1.5 1.5 0 0 0 2.5 10H3v2.25a.25.25 0 0 0 .41.192L6.5 10h2A1.5 1.5 0 0 0 10 8.5v-6A1.5 1.5 0 0 0 8.5 1zm2 3.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1 0-1m0 2h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1" />
+      <path d="M11 5.5a1 1 0 0 1 .5-.866V4.5A1.5 1.5 0 0 0 10 3v5.5A2.5 2.5 0 0 1 7.5 11H6.41l-.71.568.31.181A1.5 1.5 0 0 0 6.5 12H9.5l3.09 2.442a.25.25 0 0 0 .41-.192V12h.5A1.5 1.5 0 0 0 15 10.5v-4A1.5 1.5 0 0 0 13.5 5h-2a1 1 0 0 1-.5.5" />
+    </svg>
+  )
+}
+
 // ── Extra fantasy glyphs for custom node types (game-icons.net, CC BY 3.0) ──
 export function TrapIcon(props: SVGProps<SVGSVGElement>) {
   return (

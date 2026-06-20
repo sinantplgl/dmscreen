@@ -19,6 +19,8 @@ export function CardSettingsMenu({
   allowLabels,
   color,
   onColor,
+  showNotes,
+  onShowNotes,
 }: {
   settings: CardSettings
   onSettings: (s: CardSettings) => void
@@ -26,6 +28,9 @@ export function CardSettingsMenu({
   allowLabels?: boolean
   color?: string
   onColor?: (next: string | undefined) => void
+  /** Resolved current notes visibility; when provided, shows a Notes toggle. */
+  showNotes?: boolean
+  onShowNotes?: (next: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0 })
@@ -96,6 +101,18 @@ export function CardSettingsMenu({
                     ✕
                   </button>
                 </div>
+              </>
+            )}
+            {onShowNotes && (
+              <>
+                <span>Notes</span>
+                <button
+                  className={'ref-toggle-pill' + (showNotes ? ' on' : '')}
+                  title={showNotes ? 'Hide the notes region' : 'Show the notes region'}
+                  onClick={() => onShowNotes(!showNotes)}
+                >
+                  {showNotes ? 'On' : 'Off'}
+                </button>
               </>
             )}
             {allowLabels && (

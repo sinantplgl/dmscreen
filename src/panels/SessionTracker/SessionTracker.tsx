@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../../store/store'
 import { Board } from '../../components/Board'
-import { ListIcon, GridIcon } from '../../components/icons'
+import { ListIcon, GridIcon, LinkIcon } from '../../components/icons'
 import { childrenOf, siblingNumbers, isHidden } from './helpers'
 import { Breadcrumb } from './Breadcrumb'
 import { SearchBox } from './SearchBox'
@@ -16,9 +16,11 @@ import type { CardSettings } from '../ReferenceTables/ReferenceCards'
 import './SessionTracker.css'
 
 export function SessionTracker({
+  panelId,
   config,
   onConfig,
 }: {
+  panelId: string
   config?: Record<string, unknown>
   onConfig: (c: Record<string, unknown>) => void
 }) {
@@ -27,16 +29,65 @@ export function SessionTracker({
   const addAlias = useStore((s) => s.addAlias)
   const updateNode = useStore((s) => s.updateNode)
   const customNodeTypes = useStore((s) => s.customNodeTypes)
+  const tabs = useStore((s) => s.tabs)
+  const updatePanelConfig = useStore((s) => s.updatePanelConfig)
   const customTypeNames = new Set(customNodeTypes.map((t) => t.type))
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const [refPickerParent, setRefPickerParent] = useState<string | undefined | null>(null)
   const [maxStack, setMaxStack] = useState<string[]>([])
+  const [linkMenuOpen, setLinkMenuOpen] = useState(false)
   const maximize = (id: string) => setMaxStack((s) => (s[s.length - 1] === id ? s : [...s, id]))
+
+  // ── Panel linking ──────────────────────────────────────────────────────────
+  // Two session panels can be paired (this one as tree, the target as board) so
+  // the tree's expand (⤢) opens the node in the linked board panel. Link state
+  // lives in each panel's config; cross-panel writes go through updatePanelConfig.
+  const allPanels = tabs.flatMap((t) => t.columns).flatMap((c) => c.panels)
+  const findPanel = (id?: string) => (id ? allPanels.find((p) => p.id === id) : undefined)
+  const myTab = tabs.find((t) => t.columns.some((c) => c.panels.some((p) => p.id === panelId)))
+  const tabSessionPanels = myTab
+    ? myTab.columns.flatMap((c) => c.panels).filter((p) => p.type === 'session')
+    : []
+  const linkLabel = (id: string) => `Tracker ${tabSessionPanels.findIndex((p) => p.id === id) + 1}`
+
+  const linkRoleRaw = config?.linkRole as 'tree' | 'board' | undefined
+  const linkedPanel = findPanel(config?.linkedPanelId as string | undefined)
+  const linked = !!(linkRoleRaw && linkedPanel && linkedPanel.type === 'session')
+  const linkRole = linked ? linkRoleRaw : undefined
+
+  // Self-heal: if our link partner is gone, drop the stale link config.
+  useEffect(() => {
+    if (linkRoleRaw && !linked) onConfig({ linkRole: undefined, linkedPanelId: undefined })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkRoleRaw, linked])
+
+  const linkTo = (targetId: string) => {
+    onConfig({ linkRole: 'tree', linkedPanelId: targetId, view: 'tree' })
+    updatePanelConfig(targetId, { linkRole: 'board', linkedPanelId: panelId, view: 'board' })
+    setLinkMenuOpen(false)
+  }
+  const unlink = () => {
+    if (linkedPanel) updatePanelConfig(linkedPanel.id, { linkRole: undefined, linkedPanelId: undefined })
+    onConfig({ linkRole: undefined, linkedPanelId: undefined })
+    setLinkMenuOpen(false)
+  }
 
   const storedFocus = config?.focusId as string | undefined
   const focusId = storedFocus && nodes.some((n) => n.id === storedFocus) ? storedFocus : undefined
   const setFocus = (id: string | undefined) => onConfig({ focusId: id })
-  const openInBoard = (id: string) => onConfig({ focusId: id, view: 'board' })
+  // When linked as the tree panel, route expand to the linked board panel.
+  const openInBoard = (id: string) =>
+    linkRole === 'tree' && linkedPanel
+      ? updatePanelConfig(linkedPanel.id, { focusId: id, view: 'board' })
+      : onConfig({ focusId: id, view: 'board' })
+
+  // The node the linked board is currently showing — kept highlighted in the tree.
+  const selectedId =
+    linkRole === 'tree' && linkedPanel ? (linkedPanel.config?.focusId as string | undefined) : undefined
+  useEffect(() => {
+    if (!selectedId) return
+    document.querySelector(`[data-node-id="${selectedId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selectedId])
 
   const collapsed = (config?.collapsed as Record<string, boolean> | undefined) || {}
   const toggleCollapsed = (id: string) =>
@@ -49,7 +100,8 @@ export function SessionTracker({
   }
   const expandAll = () => onConfig({ collapsed: {} })
 
-  const view = (config?.view as 'tree' | 'board') ?? 'tree'
+  // A linked panel is locked to its role's view; otherwise use the stored view.
+  const view = linkRole ?? ((config?.view as 'tree' | 'board') ?? 'tree')
   const boardCols = (config?.boardCols as number) ?? 12
   const showHidden = !!config?.showHidden
 
@@ -140,20 +192,62 @@ export function SessionTracker({
           <span className="view-toggle">
             <button
               className={'btn' + (view === 'tree' ? ' btn-accent' : '')}
-              title={maximizing ? 'Close the window to switch views' : 'Tree view'}
-              disabled={maximizing}
+              title={linkRole ? 'View is locked while linked' : maximizing ? 'Close the window to switch views' : 'Tree view'}
+              disabled={maximizing || !!linkRole}
               onClick={() => onConfig({ view: 'tree' })}
             >
               <ListIcon />
             </button>
             <button
               className={'btn' + (view === 'board' ? ' btn-accent' : '')}
-              title={maximizing ? 'Close the window to switch views' : 'Board view'}
-              disabled={maximizing}
+              title={linkRole ? 'View is locked while linked' : maximizing ? 'Close the window to switch views' : 'Board view'}
+              disabled={maximizing || !!linkRole}
               onClick={() => onConfig({ view: 'board' })}
             >
               <GridIcon />
             </button>
+          </span>
+          <span className="view-toggle link-toggle">
+            {linkRole ? (
+              <button
+                className="btn btn-accent"
+                title={`Linked as ${linkRole} with ${linkedPanel ? linkLabel(linkedPanel.id) : 'a panel'} — click to unlink`}
+                onClick={unlink}
+              >
+                <LinkIcon /> {linkRole === 'tree' ? 'Tree' : 'Board'}
+              </button>
+            ) : (
+              <span className="link-menu-wrap">
+                <button
+                  className="btn"
+                  title={
+                    tabSessionPanels.length < 2
+                      ? 'Add another tracker panel in this tab to link'
+                      : 'Link with another tracker panel'
+                  }
+                  disabled={tabSessionPanels.length < 2}
+                  onClick={() => setLinkMenuOpen((v) => !v)}
+                >
+                  <LinkIcon />
+                </button>
+                {linkMenuOpen && (
+                  <>
+                    <div className="ref-lib-overlay" onClick={() => setLinkMenuOpen(false)} />
+                    <div className="link-menu">
+                      <div className="link-menu-title">Open expands in (board):</div>
+                      {tabSessionPanels
+                        .filter((p) => p.id !== panelId)
+                        .map((p) => (
+                          <button key={p.id} className="link-menu-item" onClick={() => linkTo(p.id)}>
+                            {linkLabel(p.id)}{' '}
+                            <span className="muted">({(p.config?.view as string) ?? 'tree'})</span>
+                          </button>
+                        ))}
+                    </div>
+                  </>
+                )}
+              </span>
+            )}
           </span>
           {view === 'tree' && (
             <span className="view-toggle">
@@ -284,6 +378,7 @@ export function SessionTracker({
               toggleCollapsed={toggleCollapsed}
               expand={expand}
               highlightId={highlightId}
+              selectedId={selectedId}
             />
           ))
         )}

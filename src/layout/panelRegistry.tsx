@@ -47,7 +47,7 @@ export const PANEL_REGISTRY: PanelMeta[] = [
     type: 'session',
     label: 'Session Tracker',
     icon: <CompassIcon />,
-    render: (inst, onConfig) => <SessionTracker config={inst.config} onConfig={onConfig} />,
+    render: (inst, onConfig) => <SessionTracker panelId={inst.id} config={inst.config} onConfig={onConfig} />,
   },
   {
     type: 'webframe',

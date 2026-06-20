@@ -281,6 +281,25 @@ export interface SessionNode {
   items?: { itemId: string; count: number }[]
   /** Creatures attached to an `encounter` node, each with a quantity. */
   creatures?: { creatureId: string; count: number }[]
+  /** Ordered conversation lines for a `dialogue` node. */
+  dialogue?: DialogueLine[]
+  /** Show/hide the markdown notes (body) region. When unset, falls back to a
+   *  per-type default (`image`/`statblock` hide it; everything else shows it). */
+  showNotes?: boolean
+}
+
+/** A single line in a dialogue node. `kind` selects which fields apply:
+ *  - speech: `speaker` (free text) and/or `speakerId` (link to an NPC node) + `text`
+ *  - note:   a DM aside — `text` only
+ *  - qa:     a PC↔NPC exchange — `question` + `answer` */
+export interface DialogueLine {
+  id: string
+  kind: 'speech' | 'note' | 'qa'
+  speaker?: string
+  speakerId?: string
+  text?: string // markdown (speech body or DM note)
+  question?: string
+  answer?: string
 }
 
 /** A user-defined session-node type, shared across campaigns and re-pickable. */

@@ -2,6 +2,7 @@ import type { FC } from 'react'
 import type { SessionNode } from '../../types'
 import { NodeItems } from './NodeItems'
 import { NodeEncounter } from './NodeEncounter'
+import { NodeDialogue } from './NodeDialogue'
 
 /** Props every extra-info section component accepts. `resizable` is true on the
  *  board card (drag splitter + persisted height) and false in the focused pane. */
@@ -10,6 +11,8 @@ export type SectionProps = {
   height?: number
   onHeight?: (px: number) => void
   resizable?: boolean
+  /** Card column count — sections that support a multi-column layout honor this. */
+  cols?: number
 }
 
 export type SectionDef = { key: string; Component: FC<SectionProps> }
@@ -23,6 +26,7 @@ export type SectionDef = { key: string; Component: FC<SectionProps> }
 export const SECTION_REGISTRY: Record<string, SectionDef[]> = {
   item: [{ key: 'items', Component: NodeItems }],
   encounter: [{ key: 'creatures', Component: NodeEncounter }],
+  dialogue: [{ key: 'dialogue', Component: NodeDialogue }],
 }
 
 export const sectionsFor = (type: string): SectionDef[] => SECTION_REGISTRY[type] ?? []

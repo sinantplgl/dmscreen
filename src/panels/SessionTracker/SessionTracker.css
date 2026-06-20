@@ -954,6 +954,91 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
 .ref-toggle-pill:hover { color: var(--text); }
 .ref-toggle-pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+/* ── Linked panel: persistent selection of the node shown on the linked board ── */
+.node-row.selected {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* ── Link panel menu ── */
+.link-toggle { position: relative; }
+.link-menu-wrap { position: relative; display: inline-flex; }
+.link-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 60;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.link-menu-title { font-size: 11px; color: var(--muted); padding: 2px 6px 6px; }
+.link-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+}
+.link-menu-item:hover { background: var(--card2); }
+
+/* ── Dialogue node ── */
+.dlg-add { display: inline-flex; gap: 4px; }
+/* Multi-column list (driven by the card's Columns setting); bubbles stay whole. */
+.dlg-list { column-gap: 8px; }
+.dlg-line {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  background: var(--card2);
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+.dlg-line-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.dlg-controls { display: inline-flex; gap: 2px; }
+.dlg-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.dlg-speaker { font-weight: 600; color: var(--gold); }
+.dlg-speaker-input { flex: 1; min-width: 0; }
+
+/* Speech bubble — tinted per speaker via the --bubble-hue custom property. */
+.dlg-speech {
+  border-left: 3px solid hsl(var(--bubble-hue, 40) 45% 55%);
+  background: hsl(var(--bubble-hue, 40) 45% 55% / 0.1);
+}
+.dlg-bubble { font-size: 14px; }
+
+.dlg-note { border-style: dashed; }
+.dlg-note-tag { color: var(--blue); border-color: var(--blue); }
+.dlg-note .markdown-host { font-style: italic; color: var(--muted); }
+
+.dlg-qa-tag { color: var(--green); border-color: var(--green); }
+.dlg-qa-view { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.dlg-q { font-weight: 700; color: var(--md-strong, #e3b24c); }
+.dlg-a, .dlg-a .markdown-host { font-style: italic; }
+.dlg-q-input { width: 100%; margin-bottom: 4px; }
+
 /* Title-color swatch palette in the card settings menu. */
 .card-color-swatches {
   justify-self: end;

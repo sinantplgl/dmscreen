@@ -328,16 +328,7 @@ export function SessionTracker({
           />
         ) : view === 'board' ? (
           <>
-            {focusNode && (
-              <FocusedContent
-                node={focusNode}
-                onPick={setPickerFor}
-                fields={cardFields[focusNode.id]}
-                onFields={(cfg) => setCardFields(focusNode.id, cfg)}
-                sectionHeights={cardSections[focusNode.id]}
-                onSectionHeight={(key, px) => setSectionHeight(focusNode.id, key, px)}
-              />
-            )}
+            {focusNode && <FocusedContent node={focusNode} onPick={setPickerFor} />}
             {boardItems.length === 0 ? (
               <div className="empty-hint">
                 {roots.length === 0

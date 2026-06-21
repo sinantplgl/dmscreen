@@ -7,19 +7,24 @@ import { TypePicker } from './TypePicker'
 import { confirmDialog } from '../../lib/dialog'
 import type { SessionNode } from '../../types'
 import { EyeIcon, EyeSlashIcon } from '../../components/icons'
-import { iconFor, isLeafType, isHidden, placeholderFor, displayTitle, nodeNumber, baseTypeOf } from './helpers'
+import { iconFor, isLeafType, isHidden, placeholderFor, nodeNumber, baseTypeOf } from './helpers'
 import { CardSettingsMenu, DEFAULT_CARD_FONT } from './CardSettingsMenu'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
-import { FieldHost, effectiveFields, visibleFieldKeys } from './fields'
+import { FieldHost, displayFields, visibleDisplayKeys } from './fields'
 import type { CardFieldConfig, FieldKey } from './fields'
 
-/** Tint a card's title bar with the node's accent color: a translucent fill
- *  plus a solid left edge. `color` is a 6-digit hex; undefined = no highlight. */
+/** Tint a card's title bar with an accent color: a translucent fill plus a solid
+ *  left edge. `color` is a 6-digit hex; undefined = no highlight. */
 function headColorStyle(color?: string): CSSProperties | undefined {
   if (!color) return undefined
   return { background: `${color}33`, boxShadow: `inset 3px 0 0 ${color}` }
 }
 
+/**
+ * A board card. ONE rendering path serves both real nodes and reference (alias)
+ * cards: the only differences are `editable` (an alias's content is read-only)
+ * and two intentional reference indicators (the ↪ badge + original-number `[n]`).
+ */
 export function NodeCard({
   node,
   nodes,
@@ -61,9 +66,6 @@ export function NodeCard({
   const contentCols = settings.contentCols ?? 1
   const bodyStyle = { ['--ref-font-size' as string]: `${fontSize}px` }
 
-  // Aliases (refId) render the target's content read-only. A broken alias is a
-  // minimal stub. Otherwise `content` is the source for icon/title/fields and the
-  // card itself (`node`) owns hide/remove/per-card config.
   const isAlias = !!node.refId
   const target = isAlias ? nodes.find((n) => n.id === node.refId) : undefined
   if (isAlias && !target) {
@@ -77,14 +79,16 @@ export function NodeCard({
       </div>
     )
   }
+  // `content` is where icon/title/fields/data come from (the target for aliases);
+  // the card itself (`node`) always owns hide/remove and per-card config.
   const content = isAlias ? target! : node
   const editable = !isAlias
   const base = baseTypeOf(content.type, customNodeTypes)
   const leaf = isLeafType(base)
+  // Title color is a per-card display setting; fall back to the node's legacy color.
+  const cardColor = settings.color ?? content.color
 
-  // Field stack: first visible field fills (grow), the rest are resizable, so the
-  // card is always fully covered. Section heights / children-open key on this card.
-  const visibleKeys = visibleFieldKeys(effectiveFields(fields, base, content))
+  const visibleKeys = visibleDisplayKeys(displayFields(fields, content, base))
   const fieldStack = (
     <div className="node-card-sections" style={bodyStyle}>
       {visibleKeys.map((key, i) => (
@@ -113,32 +117,27 @@ export function NodeCard({
 
   return (
     <div className={'node-card' + (isAlias ? ' alias' : '') + (leaf ? ' leaf' : '') + (hidden ? ' hidden' : '')}>
-      <div className="node-card-head" style={headColorStyle(content.color)}>
+      <div className="node-card-head" style={headColorStyle(cardColor)}>
         <span className="drag-grip" title="Drag to move">⠿</span>
-        {isAlias ? (
+        {editable ? (
+          <TypePicker node={node} />
+        ) : (
           <>
-            <span className="alias-badge node-type-icon">↪</span>
+            <span className="alias-badge node-type-icon" title="Reference — click ⊕ to edit the original">↪</span>
             <span className="node-type-icon" title={content.type}>{iconFor(content)}</span>
           </>
-        ) : (
-          <TypePicker node={node} />
         )}
         {num != null && <span className="node-card-num">{num}</span>}
         {isAlias && (
-          <span className="node-card-num ref-orig" title="Original number">
-            [{nodeNumber(nodes, content) ?? '?'}]
-          </span>
+          <span className="node-card-num ref-orig" title="Original number">[{nodeNumber(nodes, content) ?? '?'}]</span>
         )}
-        {isAlias ? (
-          <span className="node-alias-card-title">{displayTitle(content)}</span>
-        ) : (
-          <input
-            className="node-title"
-            value={node.title}
-            placeholder={placeholderFor(node)}
-            onChange={(e) => updateNode(node.id, { title: e.target.value })}
-          />
-        )}
+        <input
+          className="node-title"
+          value={content.title}
+          placeholder={placeholderFor(content)}
+          readOnly={!editable}
+          onChange={editable ? (e) => updateNode(node.id, { title: e.target.value }) : undefined}
+        />
         <button className="icon-btn" title="Maximize (focus mode)" onClick={() => maximize(content.id)}>
           ⤢
         </button>
@@ -151,11 +150,7 @@ export function NodeCard({
         </button>
         <button
           className="icon-btn"
-          title={
-            hidden
-              ? isAlias ? 'Show this reference on the board' : 'Show on board'
-              : isAlias ? 'Hide this reference from the board' : 'Hide from board'
-          }
+          title={hidden ? 'Show on board' : 'Hide from board'}
           onClick={() => updateNode(node.id, { hidden: !hidden })}
         >
           {hidden ? <EyeSlashIcon /> : <EyeIcon />}
@@ -165,9 +160,9 @@ export function NodeCard({
             settings={settings}
             onSettings={onSettings}
             allowColumns={visibleKeys.some((k) => k === 'notes' || k === 'dialogue')}
-            allowLabels={isAlias ? !!content.labels?.length : true}
-            color={isAlias ? undefined : node.color}
-            onColor={isAlias ? undefined : (color) => updateNode(node.id, { color })}
+            allowLabels
+            color={cardColor}
+            onColor={(color) => onSettings({ ...settings, color })}
             base={base}
             node={content}
             fields={fields}
@@ -198,10 +193,10 @@ export function NodeCard({
       </div>
 
       {settings.showLabels &&
-        (isAlias ? (
-          <LabelChips labels={content.labels} />
-        ) : (
+        (editable ? (
           <LabelChips labels={node.labels} onChange={(labels) => updateNode(node.id, { labels })} />
+        ) : (
+          <LabelChips labels={content.labels} />
         ))}
       {fieldStack}
     </div>

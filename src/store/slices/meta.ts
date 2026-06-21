@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand'
-import type { AppData } from '../../types'
+import type { AppData, CampaignState } from '../../types'
 import { makeDefaultData } from '../defaultData'
+import { bakeFields } from '../../panels/SessionTracker/fieldModel'
 import type { Store } from '../store'
 
 type Slice<T> = StateCreator<Store, [['zustand/persist', unknown]], [], T>
@@ -55,12 +56,21 @@ export const createMetaSlice: Slice<MetaActions> = (set, get) => ({
       const activeCampaignId = campaigns.some((c) => c.id === data.activeCampaignId)
         ? data.activeCampaignId
         : campaigns[0].id
+      const customNodeTypes = data.customNodeTypes ?? []
+      // Bake field structure on import/restore too (this path bypasses the persist
+      // migration), so restored saves are self-describing. Only adds `fields` /
+      // strips `showNotes` — never touches field data.
+      const inactiveCampaigns: Record<string, CampaignState> = {}
+      for (const [id, cs] of Object.entries(data.inactiveCampaigns ?? {})) {
+        inactiveCampaigns[id] = { ...cs, sessionNodes: bakeFields(cs.sessionNodes, customNodeTypes) }
+      }
       return {
         ...data,
         campaigns,
         activeCampaignId,
-        inactiveCampaigns: data.inactiveCampaigns ?? {},
-        customNodeTypes: data.customNodeTypes ?? [],
+        sessionNodes: bakeFields(data.sessionNodes, customNodeTypes),
+        inactiveCampaigns,
+        customNodeTypes,
         ddbCobalt: s.ddbCobalt,
         // backup prefs are device-local — keep this device's, don't import them
         backupEnabled: s.backupEnabled,

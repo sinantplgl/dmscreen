@@ -148,12 +148,6 @@ export const baseTypeOf = (type: string, customTypes: CustomNodeType[]): string 
 export const isLeafType = (type: string) =>
   type === 'note' || type === 'statblock' || type === 'image' || type === 'item' || type === "npc" || type === 'dialogue'
 
-/** Whether the markdown notes (body) region should render for a node. Per-node
- *  `showNotes` wins; otherwise `image`/`statblock` default to hidden (their content
- *  is the image / stat block) and everything else defaults to shown. */
-export const notesVisible = (n: SessionNode, base: string): boolean =>
-  n.showNotes ?? (base !== 'image' && base !== 'statblock')
-
 // Built-in leaf types, plus any user-defined custom type, show on the board by default.
 export const showsByDefault = (type: string, customTypes?: Set<string>) =>
   isLeafType(type) || (customTypes?.has(type) ?? false)

@@ -1,4 +1,5 @@
-import type { ComponentType } from 'react'
+import { useState } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { StatBlock } from '../StatBlock'
@@ -8,15 +9,20 @@ import type { SectionMode } from './ResizableSection'
 import { NodeItems } from './NodeItems'
 import { NodeEncounter } from './NodeEncounter'
 import { NodeDialogue } from './NodeDialogue'
-import { notesVisible } from './helpers'
+import { confirmDialog } from '../../lib/dialog'
+import { ALL_FIELD_KEYS, structureFields, displayFields } from './fieldModel'
+import type { FieldKey, CardFieldConfig } from './fieldModel'
 import type { SessionNode } from '../../types'
+
+// Re-export the pure field model so existing `./fields` importers keep working.
+export type { FieldKey, CardFieldConfig } from './fieldModel'
+export { structureFields, displayFields, visibleDisplayKeys, defaultFieldsFor } from './fieldModel'
 
 /**
  * The card field system. A node holds field *data* (body, imageUrl, items, …);
  * each card picks which fields to show, in what order and size. Field types are
  * universal — any field can appear on any node; a node type only seeds defaults.
  */
-export type FieldKey = 'notes' | 'image' | 'statblock' | 'items' | 'creatures' | 'dialogue'
 
 /** Props every field component receives. `mode` decides its chrome (see ResizableSection).
  *  `editing`/`setEditing` is the per-field edit toggle (used by notes/image). */
@@ -117,8 +123,6 @@ export const FIELD_REGISTRY: Record<FieldKey, FieldDef> = {
   dialogue: { key: 'dialogue', label: 'Dialogue', Component: NodeDialogue },
 }
 
-export const ALL_FIELD_KEYS: FieldKey[] = ['notes', 'image', 'statblock', 'items', 'creatures', 'dialogue']
-
 /** Render a field by key in the given mode. */
 export function FieldHost({ fieldKey, ...props }: FieldProps & { fieldKey: FieldKey }) {
   const def = FIELD_REGISTRY[fieldKey]
@@ -127,58 +131,139 @@ export function FieldHost({ fieldKey, ...props }: FieldProps & { fieldKey: Field
   return <Comp {...props} />
 }
 
-// ── Defaults + per-card resolution ───────────────────────────────────────────
-
-export type CardFieldConfig = { key: FieldKey; visible: boolean }[]
-
-const DEFAULT_FIELDS: Record<string, FieldKey[]> = {
-  image: ['image'],
-  statblock: ['statblock'],
-  item: ['notes', 'items'],
-  encounter: ['notes', 'creatures'],
-  dialogue: ['notes', 'dialogue'],
+/** Node-data patch that clears a field's backing data when its slot is removed. */
+export function clearFieldData(key: FieldKey): Partial<SessionNode> {
+  switch (key) {
+    case 'notes':
+      return { body: '' }
+    case 'image':
+      return { imageUrl: undefined }
+    case 'statblock':
+      return { creatureId: undefined }
+    case 'items':
+      return { items: undefined }
+    case 'creatures':
+      return { creatures: undefined }
+    case 'dialogue':
+      return { dialogue: undefined }
+  }
 }
 
-/** The default ordered field set for a base type (custom types pass their base). */
-export const defaultFieldsFor = (base: string): FieldKey[] => DEFAULT_FIELDS[base] ?? ['notes']
+// ── Editors (shared draggable row list, two modes) ───────────────────────────
 
-/** The per-card field config to render: stored override, else the type default —
- *  seeding the legacy per-node `showNotes` so upgrades keep their notes state. */
-export function effectiveFields(
-  stored: CardFieldConfig | undefined,
-  base: string,
-  node: SessionNode,
-): CardFieldConfig {
-  if (stored && stored.length) return stored
-  const cfg: CardFieldConfig = defaultFieldsFor(base).map((k) => ({
-    key: k,
-    visible: k === 'notes' ? notesVisible(node, base) : true,
-  }))
-  // Preserve a legacy explicit "show notes" on a type whose defaults omit notes
-  // (e.g. an image node the user had toggled notes on before the field system).
-  if (node.showNotes === true && !cfg.some((f) => f.key === 'notes')) cfg.push({ key: 'notes', visible: true })
-  return cfg
+/** A reorderable list of field rows. `onReorder(from, to)` moves `from` into
+ *  `to`'s slot; `renderRow` draws everything right of the drag grip. */
+function FieldRowList({
+  keys,
+  onReorder,
+  renderRow,
+}: {
+  keys: FieldKey[]
+  onReorder: (from: FieldKey, to: FieldKey) => void
+  renderRow: (key: FieldKey) => ReactNode
+}) {
+  const [dragKey, setDragKey] = useState<FieldKey | null>(null)
+  const [overKey, setOverKey] = useState<FieldKey | null>(null)
+  return (
+    <>
+      {keys.map((key) => (
+        <div
+          key={key}
+          className={
+            'card-field-row' +
+            (dragKey === key ? ' dragging' : '') +
+            (overKey === key && dragKey && dragKey !== key ? ' drop-over' : '')
+          }
+          draggable
+          onDragStart={(e) => {
+            setDragKey(key)
+            e.dataTransfer.effectAllowed = 'move'
+          }}
+          onDragEnd={() => {
+            setDragKey(null)
+            setOverKey(null)
+          }}
+          onDragOver={(e) => {
+            if (!dragKey) return
+            e.preventDefault()
+            setOverKey(key)
+          }}
+          onDrop={(e) => {
+            e.preventDefault()
+            if (dragKey && dragKey !== key) onReorder(dragKey, key)
+            setDragKey(null)
+            setOverKey(null)
+          }}
+        >
+          <span className="card-field-grip" title="Drag to reorder">⠿</span>
+          {renderRow(key)}
+        </div>
+      ))}
+    </>
+  )
 }
 
-export const visibleFieldKeys = (cfg: CardFieldConfig): FieldKey[] =>
-  cfg.filter((f) => f.visible).map((f) => f.key)
-
-/** Full reorderable list for the Fields editor: effective fields first (in order),
- *  then every remaining registry field appended as hidden. */
-export function fieldRows(
-  stored: CardFieldConfig | undefined,
-  base: string,
-  node: SessionNode,
-): CardFieldConfig {
-  const eff = effectiveFields(stored, base, node)
-  const present = new Set(eff.map((f) => f.key))
-  const missing = ALL_FIELD_KEYS.filter((k) => !present.has(k)).map((k) => ({ key: k, visible: false }))
-  return [...eff, ...missing]
+const reordered = (list: FieldKey[], from: FieldKey, to: FieldKey): FieldKey[] => {
+  const next = [...list]
+  const fi = next.indexOf(from)
+  const ti = next.indexOf(to)
+  if (fi < 0 || ti < 0) return list
+  const [moved] = next.splice(fi, 1)
+  next.splice(ti, 0, moved)
+  return next
 }
 
-/** Per-card field list editor (show/hide + reorder). Shared by the card gear menu
- *  and the focused/maximized pane so a hidden field can be re-added from either. */
-export function FieldsEditor({
+/** Focus-in CONTENT editor: add / remove / reorder the node's field structure.
+ *  Removing a field warns, then drops the slot and clears its data. */
+export function StructureEditor({ node, base }: { node: SessionNode; base: string }) {
+  const updateNode = useStore((s) => s.updateNode)
+  const keys = structureFields(node, base)
+  const missing = ALL_FIELD_KEYS.filter((k) => !keys.includes(k))
+
+  const setStructure = (next: FieldKey[]) => updateNode(node.id, { fields: next })
+  const add = (key: FieldKey) => setStructure([...keys, key])
+  const remove = async (key: FieldKey) => {
+    const ok = await confirmDialog({
+      title: `Remove the ${FIELD_REGISTRY[key]?.label ?? key} field?`,
+      message: 'This deletes the field and its content from this node (on every card). This cannot be undone.',
+      confirmLabel: 'Remove',
+      danger: true,
+    })
+    if (!ok) return
+    updateNode(node.id, { fields: keys.filter((k) => k !== key), ...clearFieldData(key) })
+  }
+
+  return (
+    <div className="card-fields-editor">
+      <div className="card-fields-title">Fields</div>
+      <FieldRowList
+        keys={keys}
+        onReorder={(from, to) => setStructure(reordered(keys, from, to))}
+        renderRow={(key) => (
+          <>
+            <span className="card-field-name card-field-name-static">{FIELD_REGISTRY[key]?.label ?? key}</span>
+            <button className="icon-btn danger" title="Remove field (deletes its content)" onClick={() => remove(key)}>
+              ✕
+            </button>
+          </>
+        )}
+      />
+      {missing.length > 0 && (
+        <div className="card-fields-add">
+          <span className="card-fields-add-label">Add:</span>
+          {missing.map((k) => (
+            <button key={k} className="btn btn-sm" onClick={() => add(k)}>
+              ＋ {FIELD_REGISTRY[k].label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Per-card DISPLAY editor: hide / reorder the node's existing fields. */
+export function DisplayEditor({
   fields,
   base,
   node,
@@ -189,43 +274,32 @@ export function FieldsEditor({
   node: SessionNode
   onFields: (cfg: CardFieldConfig) => void
 }) {
-  const rows = fieldRows(fields, base, node)
+  const rows = displayFields(fields, node, base)
+  const visibleOf = (key: FieldKey) => rows.find((r) => r.key === key)?.visible ?? true
   const toggle = (key: FieldKey) =>
     onFields(rows.map((r) => (r.key === key ? { ...r, visible: !r.visible } : r)))
-  const move = (key: FieldKey, dir: -1 | 1) => {
-    const i = rows.findIndex((r) => r.key === key)
-    const j = i + dir
-    if (i < 0 || j < 0 || j >= rows.length) return
-    const next = [...rows]
-    ;[next[i], next[j]] = [next[j], next[i]]
-    onFields(next)
+  const onReorder = (from: FieldKey, to: FieldKey) => {
+    const order = reordered(rows.map((r) => r.key), from, to)
+    onFields(order.map((k) => ({ key: k, visible: visibleOf(k) })))
   }
+
   return (
     <div className="card-fields-editor">
       <div className="card-fields-title">Fields</div>
-      {rows.map((r, i) => (
-        <div className="card-field-row" key={r.key}>
+      <FieldRowList
+        keys={rows.map((r) => r.key)}
+        onReorder={onReorder}
+        renderRow={(key) => (
           <button
             className="card-field-name"
-            title={r.visible ? 'Hide this field' : 'Show this field'}
-            onClick={() => toggle(r.key)}
+            title={visibleOf(key) ? 'Hide this field' : 'Show this field'}
+            onClick={() => toggle(key)}
           >
-            <span className={'card-field-dot' + (r.visible ? ' on' : '')} />
-            {FIELD_REGISTRY[r.key]?.label ?? r.key}
+            <span className={'card-field-dot' + (visibleOf(key) ? ' on' : '')} />
+            {FIELD_REGISTRY[key]?.label ?? key}
           </button>
-          <button className="icon-btn" title="Move up" disabled={i === 0} onClick={() => move(r.key, -1)}>
-            ▲
-          </button>
-          <button
-            className="icon-btn"
-            title="Move down"
-            disabled={i === rows.length - 1}
-            onClick={() => move(r.key, 1)}
-          >
-            ▼
-          </button>
-        </div>
-      ))}
+        )}
+      />
     </div>
   )
 }

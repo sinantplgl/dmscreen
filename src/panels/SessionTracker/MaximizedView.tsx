@@ -111,14 +111,7 @@ export function MaximizedView({
       <div className="session-maximized-body">
         {active ? (
           <>
-            <FocusedContent
-              node={active}
-              onPick={onPick}
-              fields={cardFields[active.id]}
-              onFields={(cfg) => setCardFields(active.id, cfg)}
-              sectionHeights={cardSections[active.id]}
-              onSectionHeight={(key, px) => setSectionHeight(active.id, key, px)}
-            />
+            <FocusedContent node={active} onPick={onPick} />
             {children.length > 0 && (
               <Board
                 items={children}

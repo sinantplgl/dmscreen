@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { GearIcon } from '../../components/icons'
 import type { CardSettings } from '../ReferenceTables/ReferenceCards'
-import { FieldsEditor } from './fields'
+import { DisplayEditor } from './fields'
 import type { CardFieldConfig } from './fields'
 import type { SessionNode } from '../../types'
 import { useMenuAnchor } from '../../lib/anchorMenu'
@@ -63,7 +63,7 @@ export function CardSettingsMenu({
         <>
           <div className="ref-lib-overlay" onClick={() => setOpen(false)} />
           <div ref={menuRef} className="ref-settings-menu" style={menuStyle}>
-            {showFields && <FieldsEditor fields={fields} base={base!} node={node!} onFields={onFields!} />}
+            {showFields && <DisplayEditor fields={fields} base={base!} node={node!} onFields={onFields!} />}
             <span>Font size</span>
             <div className="ref-stepper">
               <button className="ref-stepper-btn" onClick={() => setFont(fontSize - 1)} title="Smaller text">

@@ -435,6 +435,10 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
 }
 .node-title:hover { border-color: var(--border) !important; }
 .node-title:focus { background: var(--surface) !important; border-color: var(--accent) !important; }
+/* Read-only title (reference cards): reads as text, italic — no edit affordance,
+   but identical box metrics to the editable input so the header height matches. */
+.node-title[readonly] { cursor: default; font-style: italic; }
+.node-title[readonly]:hover { border-color: transparent !important; }
 /* Tree-row title shown as static text (double-click to edit). Mimics the input
    box so the row height doesn't shift when switching into edit mode. */
 .node-title-static {
@@ -778,7 +782,10 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
   top: 100%;
   right: 0;
   z-index: 50;
-  min-width: 180px;
+  /* Fixed width so adding/removing fields (and the wrapping "add" chips) doesn't
+     change the menu's width. */
+  width: 240px;
+  box-sizing: border-box;
   padding: 8px 10px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -885,7 +892,6 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
 .node-alias-label:hover { color: var(--gold); background: var(--surface); }
 .alias-badge { color: var(--accent) !important; cursor: default !important; }
 .node-alias-broken { flex: 1; font-size: 13px; color: var(--muted); font-style: italic; }
-.node-alias-card-title { flex: 1; font-size: 14px; font-weight: 500; font-style: italic; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* modal hint text */
 .modal-hint { font-size: 13px; color: var(--muted); margin: 2px 0 8px; }
@@ -1051,6 +1057,9 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
   margin-bottom: 4px;
 }
 .dlg-controls { display: inline-flex; gap: 2px; }
+.dlg-grip { color: var(--muted); font-size: 12px; line-height: 1; user-select: none; flex: 0 0 auto; }
+.dlg-line.dragging { opacity: 0.5; }
+.dlg-line.drop-over { box-shadow: inset 0 2px 0 var(--accent); }
 .dlg-tag {
   font-size: 10px;
   text-transform: uppercase;
@@ -1097,7 +1106,17 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
   color: var(--gold);
   margin-bottom: 2px;
 }
-.card-field-row { display: flex; align-items: center; gap: 4px; }
+.card-field-row { display: flex; align-items: center; gap: 4px; border-top: 2px solid transparent; }
+.card-field-row.dragging { opacity: 0.5; }
+.card-field-row.drop-over { border-top-color: var(--accent); }
+.card-field-grip {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 2px;
+  user-select: none;
+}
 .card-field-name {
   flex: 1;
   display: flex;
@@ -1121,6 +1140,18 @@ button.board-opt-toggle:hover { background: var(--surface); color: var(--gold); 
   flex: 0 0 auto;
 }
 .card-field-dot.on { background: var(--accent); border-color: var(--accent); }
+.card-field-name-static { flex: 1; padding: 3px 6px; font-size: 12px; color: var(--text); }
+.card-fields-add {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.card-fields-add-label { font-size: 11px; color: var(--muted); }
 
 /* Title-color swatch palette in the card settings menu. */
 .card-color-swatches {

@@ -6,7 +6,13 @@ import type { RefImage, RefItem, RefNote, RefTable } from '../../types'
 
 type Update = (id: string, patch: Record<string, unknown>) => void
 
-export type CardSettings = { fontSize?: number; contentCols?: number; showLabels?: boolean }
+export type CardSettings = {
+  fontSize?: number
+  contentCols?: number
+  showLabels?: boolean
+  /** Per-card title-bar tint (hex). Falls back to the node's legacy `color`. */
+  color?: string
+}
 
 const DEFAULT_FONT = 13
 const DEFAULT_COLS = 1

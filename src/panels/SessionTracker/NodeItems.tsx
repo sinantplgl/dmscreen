@@ -11,7 +11,7 @@ import { AttunementIcon } from '../../components/icons'
 import type { FieldProps } from './fields'
 
 /** Magic items attached to an `item` node, each with a quantity. */
-export function NodeItems({ node, height, onHeight, mode }: FieldProps) {
+export function NodeItems({ node, height, onHeight, mode, editable = true }: FieldProps) {
   const items = useStore((s) => s.items)
   const updateNode = useStore((s) => s.updateNode)
   const [picking, setPicking] = useState(false)
@@ -23,16 +23,16 @@ export function NodeItems({ node, height, onHeight, mode }: FieldProps) {
     updateNode(node.id, { items: setItemCount(node.items, itemId, count) })
   const editing = items.find((it) => it.id === editId)
 
-  const actions = (
+  const actions = editable ? (
     <button className="btn btn-sm" onClick={() => setPicking(true)}>
       + Add item
     </button>
-  )
+  ) : null
 
   return (
     <ResizableSection title="Items" actions={actions} mode={mode} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
-        <div className="node-items-empty">No items yet — click "+ Add item".</div>
+        <div className="node-items-empty">{editable ? 'No items yet — click "+ Add item".' : 'No items.'}</div>
       ) : (
         list.map((ref) => {
           const it = items.find((x) => x.id === ref.itemId)
@@ -40,9 +40,11 @@ export function NodeItems({ node, height, onHeight, mode }: FieldProps) {
             return (
               <div key={ref.itemId} className="attach-row">
                 <span className="attach-name muted">⚠ missing item</span>
-                <button className="icon-btn danger" title="Remove" onClick={() => setCount(ref.itemId, 0)}>
-                  ✕
-                </button>
+                {editable && (
+                  <button className="icon-btn danger" title="Remove" onClick={() => setCount(ref.itemId, 0)}>
+                    ✕
+                  </button>
+                )}
               </div>
             )
           }
@@ -71,20 +73,28 @@ export function NodeItems({ node, height, onHeight, mode }: FieldProps) {
                   <span className="attach-item-sub">{itemTypeLine(it.itemType, it.rarity)}</span>
                 </button>
                 <span className="attach-stepper">
-                  <button className="ref-stepper-btn" title="Fewer" onClick={() => setCount(it.id, ref.count - 1)}>
-                    −
-                  </button>
-                  <span className="attach-count">{ref.count}</span>
-                  <button className="ref-stepper-btn" title="More" onClick={() => setCount(it.id, ref.count + 1)}>
-                    +
-                  </button>
+                  {editable && (
+                    <button className="ref-stepper-btn" title="Fewer" onClick={() => setCount(it.id, ref.count - 1)}>
+                      −
+                    </button>
+                  )}
+                  <span className="attach-count">{editable ? ref.count : `×${ref.count}`}</span>
+                  {editable && (
+                    <button className="ref-stepper-btn" title="More" onClick={() => setCount(it.id, ref.count + 1)}>
+                      +
+                    </button>
+                  )}
                 </span>
-                <button className="icon-btn" title="Edit item" onClick={() => setEditId(it.id)}>
-                  ✎
-                </button>
-                <button className="icon-btn danger" title="Remove from this node" onClick={() => setCount(it.id, 0)}>
-                  ✕
-                </button>
+                {editable && (
+                  <>
+                    <button className="icon-btn" title="Edit item" onClick={() => setEditId(it.id)}>
+                      ✎
+                    </button>
+                    <button className="icon-btn danger" title="Remove from this node" onClick={() => setCount(it.id, 0)}>
+                      ✕
+                    </button>
+                  </>
+                )}
               </div>
               {open && it.description && (
                 <div className="attach-detail markdown-host">

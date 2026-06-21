@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { AppData, Party, Player, Tab } from '../types'
+import type { AppData, CustomNodeType, Party, Player, SessionNode, Tab } from '../types'
 import { makeDefaultData } from './defaultData'
 import { createCampaignSlice, type CampaignActions } from './slices/campaigns'
 import { createLayoutSlice, type LayoutActions } from './slices/layout'
@@ -13,6 +13,7 @@ import { createReferenceSlice, type ReferenceActions } from './slices/reference'
 import { createSessionSlice, type SessionActions } from './slices/session'
 import { createDiceSlice, type DiceActions } from './slices/dice'
 import { createMetaSlice, type MetaActions } from './slices/meta'
+import { bakeFields } from '../panels/SessionTracker/fieldModel'
 
 const STORAGE_KEY = 'dm-screen-v1'
 
@@ -67,7 +68,7 @@ export const useStore = create<Store>()(
     }),
     {
       name: STORAGE_KEY,
-      version: 6,
+      version: 7,
       partialize: (s) => ({
         campaigns: s.campaigns,
         activeCampaignId: s.activeCampaignId,
@@ -127,6 +128,17 @@ export const useStore = create<Store>()(
         if (version < 6) {
           if (typeof state.backupEnabled !== 'boolean') state.backupEnabled = true
           if (typeof state.backupIntervalMin !== 'number') state.backupIntervalMin = 60
+        }
+        if (version < 7) {
+          // Bake each node's field STRUCTURE in explicitly (self-describing, no longer
+          // reliant on read-time derivation) and drop the obsolete `showNotes` flag.
+          // Only adds `fields` / strips `showNotes` — never touches field data.
+          const cts = (state.customNodeTypes as CustomNodeType[]) ?? []
+          state.sessionNodes = bakeFields(state.sessionNodes as SessionNode[], cts)
+          const inactive = (state.inactiveCampaigns as Record<string, { sessionNodes?: SessionNode[] }>) ?? {}
+          for (const id of Object.keys(inactive)) {
+            if (inactive[id]) inactive[id].sessionNodes = bakeFields(inactive[id].sessionNodes, cts)
+          }
         }
         return state as unknown as AppData
       },

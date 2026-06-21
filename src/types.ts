@@ -283,9 +283,12 @@ export interface SessionNode {
   creatures?: { creatureId: string; count: number }[]
   /** Ordered conversation lines for a `dialogue` node. */
   dialogue?: DialogueLine[]
-  /** Show/hide the markdown notes (body) region. When unset, falls back to a
-   *  per-type default (`image`/`statblock` hide it; everything else shows it). */
-  showNotes?: boolean
+  /** The node's field *structure* — the ordered list of field slots it has
+   *  (FieldKey values from the field registry). Edited in the focus-in view
+   *  (add/remove/reorder); shared across every card. Undefined ⇒ derived from
+   *  the node type's default field set. A v7 migration bakes this onto every
+   *  pre-existing node. */
+  fields?: string[]
 }
 
 /** A single line in a dialogue node. `kind` selects which fields apply:

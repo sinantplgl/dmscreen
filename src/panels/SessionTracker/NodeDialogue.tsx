@@ -1,14 +1,11 @@
 import { useState } from 'react'
+import type { DragEvent } from 'react'
 import { useStore } from '../../store/store'
 import { Markdown } from '../../lib/markdown'
 import { ResizableSection } from './ResizableSection'
-import {
-  addDialogueLine,
-  updateDialogueLine,
-  removeDialogueLine,
-  moveDialogueLine,
-} from './attachments'
+import { addDialogueLine, updateDialogueLine, removeDialogueLine } from './attachments'
 import { baseTypeOf, displayTitle, iconFor } from './helpers'
+import { confirmDialog } from '../../lib/dialog'
 import type { DialogueLine, SessionNode } from '../../types'
 import type { FieldProps } from './fields'
 
@@ -22,11 +19,13 @@ function hueOf(s: string): number {
 
 /** A scripted/spontaneous conversation: an ordered list of speech bubbles,
  *  interleaved DM notes, and PC↔NPC Q&A — sharing one design, differing by kind. */
-export function NodeDialogue({ node, height, onHeight, mode, cols = 1 }: FieldProps) {
+export function NodeDialogue({ node, height, onHeight, mode, cols = 1, editable = true }: FieldProps) {
   const nodes = useStore((s) => s.sessionNodes)
   const updateNode = useStore((s) => s.updateNode)
   const [editId, setEditId] = useState<string | null>(null)
   const [pickFor, setPickFor] = useState<string | null>(null)
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
 
   const list = node.dialogue ?? []
   const set = (next: DialogueLine[]) => updateNode(node.id, { dialogue: next })
@@ -36,47 +35,94 @@ export function NodeDialogue({ node, height, onHeight, mode, cols = 1 }: FieldPr
     set(next)
     setEditId(next[next.length - 1].id)
   }
+  // Drag a line onto another to move it into that slot.
+  const reorder = (fromId: string, toId: string) => {
+    if (fromId === toId) return
+    const arr = [...list]
+    const fi = arr.findIndex((l) => l.id === fromId)
+    const ti = arr.findIndex((l) => l.id === toId)
+    if (fi < 0 || ti < 0) return
+    const [moved] = arr.splice(fi, 1)
+    arr.splice(ti, 0, moved)
+    set(arr)
+  }
+  const removeLine = async (line: DialogueLine) => {
+    const ok = await confirmDialog({
+      title: 'Remove this line?',
+      message: 'Delete this dialogue line? This cannot be undone.',
+      confirmLabel: 'Remove',
+      danger: true,
+    })
+    if (!ok) return
+    set(removeDialogueLine(list, line.id))
+    if (editId === line.id) setEditId(null)
+  }
+  // Drag wiring shared by every line; disabled while a line is being edited so
+  // text selection in its inputs still works.
+  const dragProps = (line: DialogueLine, editing: boolean) =>
+    editable && !editing
+      ? {
+          draggable: true,
+          onDragStart: (e: DragEvent) => {
+            setDragId(line.id)
+            e.dataTransfer.effectAllowed = 'move'
+          },
+          onDragEnd: () => {
+            setDragId(null)
+            setOverId(null)
+          },
+          onDragOver: (e: DragEvent) => {
+            if (!dragId) return
+            e.preventDefault()
+            setOverId(line.id)
+          },
+          onDrop: (e: DragEvent) => {
+            e.preventDefault()
+            if (dragId) reorder(dragId, line.id)
+            setDragId(null)
+            setOverId(null)
+          },
+        }
+      : {}
+  const lineClass = (line: DialogueLine, base: string) =>
+    base + (dragId === line.id ? ' dragging' : '') + (overId === line.id && dragId && dragId !== line.id ? ' drop-over' : '')
+  const grip = editable ? <span className="dlg-grip" title="Drag to reorder">⠿</span> : null
 
-  const actions = (
+  const actions = editable ? (
     <span className="dlg-add">
       <button className="btn btn-sm" onClick={() => add('speech')}>+ Speech</button>
       <button className="btn btn-sm" onClick={() => add('note')}>+ DM note</button>
       <button className="btn btn-sm" onClick={() => add('qa')}>+ Q&amp;A</button>
     </span>
-  )
+  ) : null
 
-  const controlsFor = (line: DialogueLine, editing: boolean) => (
-    <span className="dlg-controls">
-      <button className="icon-btn" title={editing ? 'Done' : 'Edit'} onClick={() => setEditId(editing ? null : line.id)}>
-        {editing ? '▿' : '✎'}
-      </button>
-      <button className="icon-btn" title="Move up" onClick={() => set(moveDialogueLine(list, line.id, -1))}>▲</button>
-      <button className="icon-btn" title="Move down" onClick={() => set(moveDialogueLine(list, line.id, 1))}>▼</button>
-      <button
-        className="icon-btn danger"
-        title="Remove line"
-        onClick={() => {
-          set(removeDialogueLine(list, line.id))
-          if (editing) setEditId(null)
-        }}
-      >
-        ✕
-      </button>
-    </span>
-  )
+  const controlsFor = (line: DialogueLine, editing: boolean) =>
+    !editable ? null : (
+      <span className="dlg-controls">
+        <button className="icon-btn" title={editing ? 'Done' : 'Edit'} onClick={() => setEditId(editing ? null : line.id)}>
+          {editing ? '▿' : '✎'}
+        </button>
+        <button className="icon-btn danger" title="Remove line" onClick={() => removeLine(line)}>
+          ✕
+        </button>
+      </span>
+    )
 
   return (
     <ResizableSection title="Dialogue" actions={actions} mode={mode} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
-        <div className="node-items-empty">No lines yet — add a speech bubble, DM note, or Q&amp;A.</div>
+        <div className="node-items-empty">
+          {editable ? 'No lines yet — add a speech bubble, DM note, or Q&A.' : 'No dialogue.'}
+        </div>
       ) : (
         <div className="dlg-list" style={{ columnCount: cols > 1 ? cols : undefined }}>
         {list.map((line) => {
-          const editing = editId === line.id
+          const editing = editable && editId === line.id
           if (line.kind === 'note') {
             return (
-              <div key={line.id} className="dlg-line dlg-note">
+              <div key={line.id} className={lineClass(line, 'dlg-line dlg-note')} {...dragProps(line, editing)}>
                 <div className="dlg-line-head">
+                  {grip}
                   <span className="dlg-tag dlg-note-tag">DM note</span>
                   <span className="spacer" />
                   {controlsFor(line, editing)}
@@ -98,8 +144,9 @@ export function NodeDialogue({ node, height, onHeight, mode, cols = 1 }: FieldPr
           }
           if (line.kind === 'qa') {
             return (
-              <div key={line.id} className="dlg-line dlg-qa">
+              <div key={line.id} className={lineClass(line, 'dlg-line dlg-qa')} {...dragProps(line, editing)}>
                 <div className="dlg-line-head">
+                  {grip}
                   <span className="dlg-tag dlg-qa-tag">Q&amp;A</span>
                   <span className="spacer" />
                   {controlsFor(line, editing)}
@@ -138,8 +185,14 @@ export function NodeDialogue({ node, height, onHeight, mode, cols = 1 }: FieldPr
           const linked = line.speakerId ? nodes.find((n) => n.id === line.speakerId) : undefined
           const hue = hueOf(line.speakerId || line.speaker || '')
           return (
-            <div key={line.id} className="dlg-line dlg-speech" style={{ ['--bubble-hue' as string]: String(hue) }}>
+            <div
+              key={line.id}
+              className={lineClass(line, 'dlg-line dlg-speech')}
+              style={{ ['--bubble-hue' as string]: String(hue) }}
+              {...dragProps(line, editing)}
+            >
               <div className="dlg-line-head">
+                {grip}
                 {editing ? (
                   <>
                     <input

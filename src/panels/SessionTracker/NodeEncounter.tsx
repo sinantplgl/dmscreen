@@ -9,7 +9,7 @@ import type { FieldProps } from './fields'
 
 /** Creatures attached to an `encounter` node, each with a quantity, plus a
  *  one-click "send the whole encounter to the combat tracker". */
-export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
+export function NodeEncounter({ node, height, onHeight, mode, editable = true }: FieldProps) {
   const bestiary = useStore((s) => s.bestiary)
   const updateNode = useStore((s) => s.updateNode)
   const sendCreaturesToCombat = useStore((s) => s.sendCreaturesToCombat)
@@ -21,6 +21,8 @@ export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
     updateNode(node.id, { creatures: setCreatureCount(node.creatures, creatureId, count) })
   const total = list.reduce((n, c) => n + c.count, 0)
 
+  // Sending to combat is an action, not a content edit — available on read-only
+  // (alias) cards too; only the add/remove/count controls are gated.
   const actions = (
     <>
       {list.length > 0 && (
@@ -32,16 +34,18 @@ export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
           <SwordsIcon /> Send all ({total})
         </button>
       )}
-      <button className="btn btn-sm" onClick={() => setPicking(true)}>
-        + Add creature
-      </button>
+      {editable && (
+        <button className="btn btn-sm" onClick={() => setPicking(true)}>
+          + Add creature
+        </button>
+      )}
     </>
   )
 
   return (
     <ResizableSection title="Creatures" actions={actions} mode={mode} height={height} onHeight={onHeight}>
       {list.length === 0 ? (
-        <div className="node-items-empty">No creatures yet — click "+ Add creature".</div>
+        <div className="node-items-empty">{editable ? 'No creatures yet — click "+ Add creature".' : 'No creatures.'}</div>
       ) : (
         list.map((ref) => {
           const cr = bestiary.find((x) => x.id === ref.creatureId)
@@ -49,13 +53,15 @@ export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
             return (
               <div key={ref.creatureId} className="attach-row">
                 <span className="attach-name muted">⚠ missing creature</span>
-                <button
-                  className="icon-btn danger"
-                  title="Remove"
-                  onClick={() => setCount(ref.creatureId, 0)}
-                >
-                  ✕
-                </button>
+                {editable && (
+                  <button
+                    className="icon-btn danger"
+                    title="Remove"
+                    onClick={() => setCount(ref.creatureId, 0)}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             )
           }
@@ -87,7 +93,7 @@ export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
                 <span className="attach-unique" title="Unique — only one allowed">
                   unique
                 </span>
-              ) : (
+              ) : editable ? (
                 <span className="attach-stepper">
                   <button className="ref-stepper-btn" title="Fewer" onClick={() => setCount(cr.id, ref.count - 1)}>
                     −
@@ -97,6 +103,10 @@ export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
                     +
                   </button>
                 </span>
+              ) : (
+                <span className="attach-stepper">
+                  <span className="attach-count">×{ref.count}</span>
+                </span>
               )}
               <button
                 className="icon-btn"
@@ -105,9 +115,11 @@ export function NodeEncounter({ node, height, onHeight, mode }: FieldProps) {
               >
                 <SwordsIcon />
               </button>
-              <button className="icon-btn danger" title="Remove from this encounter" onClick={() => setCount(cr.id, 0)}>
-                ✕
-              </button>
+              {editable && (
+                <button className="icon-btn danger" title="Remove from this encounter" onClick={() => setCount(cr.id, 0)}>
+                  ✕
+                </button>
+              )}
             </div>
             {open && (
               <div className="attach-statblock">

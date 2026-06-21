@@ -252,14 +252,28 @@ main.workspace {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
-.panel-grip {
+/* Central drag-grip cursor: grab on hover, grabbing while pressed. Any draggable
+   "move" handle should use one of these classes rather than redefining cursor. */
+.drag-grip,
+.panel-grip,
+.init-grip,
+.card-field-grip,
+.dlg-grip {
   cursor: grab;
+}
+.drag-grip:active,
+.panel-grip:active,
+.init-grip:active,
+.card-field-grip:active,
+.dlg-grip:active {
+  cursor: grabbing;
+}
+.panel-grip {
   color: var(--muted);
   font-size: 13px;
   letter-spacing: -1px;
   user-select: none;
 }
-.panel-grip:active { cursor: grabbing; }
 .panel-title {
   font-family: 'Cinzel', serif;
   font-size: 11px;
